@@ -1,0 +1,14 @@
+/*
+  Cache-Control: public, max-age=1800
+  
+/assets/*
+  Cache-Control: public, max-age=31536000
+  
+/*.webp
+  Cache-Control: public, max-age=31536000
+  
+/*.png
+  Cache-Control: public, max-age=31536000
+  
+/*.jpg
+  Cache-Control: public, max-age=31536000
