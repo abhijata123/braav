@@ -156,11 +156,50 @@ export const PublicCollection: React.FC = () => {
     }
   }, [username]);
 
+  // Fixed: Added loadingMore and hasMore to dependencies
+  const loadMoreCoins = useCallback(async () => {
+    if (!profile?.Username || loadingMore || !hasMore) return;
+
+    setLoadingMore(true);
+    try {
+      const start = coins.length;
+      const end = start + COINS_PER_PAGE - 1;
+
+      const { data, error } = await supabase
+        .from('Challenge Coin Table')
+        .select('*, created_at, "Has Copyright"')
+        .eq('Username', profile.Username)
+        .eq('Public Display', true)
+        .order('Priority', { ascending: true })
+        .range(start, end);
+
+      if (error) throw error;
+
+      // Initialize loading state for new coins
+      const newLoadingState = { ...loadingImages };
+      (data || []).forEach(coin => {
+        newLoadingState[coin.id] = true;
+        preloadImage(coin['Coin Image'], coin.id);
+        if (coin.BacksideUrl) {
+          preloadImage(coin.BacksideUrl, coin.id, false);
+        }
+      });
+      setLoadingImages(newLoadingState);
+
+      setCoins([...coins, ...(data || [])]);
+      setHasMore(data ? data.length === COINS_PER_PAGE : false);
+    } catch (error) {
+      console.error('Error loading more coins:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [profile?.Username, loadingMore, hasMore, coins.length, loadingImages]);
+
   useEffect(() => {
     if (inView && !loadingMore && hasMore) {
       loadMoreCoins();
     }
-  }, [inView]);
+  }, [inView, loadMoreCoins]);
 
   useEffect(() => {
     // If profile is loaded and CometChat is initialized, update the chat with the profile user
@@ -267,44 +306,6 @@ export const PublicCollection: React.FC = () => {
       console.error('Error fetching coins:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadMoreCoins = async () => {
-    if (!profile?.Username || loadingMore || !hasMore) return;
-
-    setLoadingMore(true);
-    try {
-      const start = coins.length;
-      const end = start + COINS_PER_PAGE - 1;
-
-      const { data, error } = await supabase
-        .from('Challenge Coin Table')
-        .select('*, created_at, "Has Copyright"')
-        .eq('Username', profile.Username)
-        .eq('Public Display', true)
-        .order('Priority', { ascending: true })
-        .range(start, end);
-
-      if (error) throw error;
-
-      // Initialize loading state for new coins
-      const newLoadingState = { ...loadingImages };
-      (data || []).forEach(coin => {
-        newLoadingState[coin.id] = true;
-        preloadImage(coin['Coin Image'], coin.id);
-        if (coin.BacksideUrl) {
-          preloadImage(coin.BacksideUrl, coin.id, false);
-        }
-      });
-      setLoadingImages(newLoadingState);
-
-      setCoins([...coins, ...(data || [])]);
-      setHasMore(data ? data.length === COINS_PER_PAGE : false);
-    } catch (error) {
-      console.error('Error loading more coins:', error);
-    } finally {
-      setLoadingMore(false);
     }
   };
 

@@ -65,11 +65,52 @@ export const Collection: React.FC = () => {
     }
   }, [user]);
 
+  // Fixed: Added loadingMore and hasMore to dependencies
+  const loadMoreCoins = useCallback(async () => {
+    if (!profile?.Username || loadingMore || !hasMore) return;
+
+    setLoadingMore(true);
+    try {
+      const start = coins.length;
+      const end = start + COINS_PER_PAGE - 1;
+
+      const { data, error, count } = await supabase
+        .from('Challenge Coin Table')
+        .select('*, created_at, "Has Copyright"', { count: 'exact' })
+        .eq('Username', profile.Username)
+        .order('Priority', { ascending: true })
+        .range(start, end);
+
+      if (error) throw error;
+
+      // Initialize loading state for new coins
+      const newLoadingState = { ...loadingImages };
+      (data || []).forEach(coin => {
+        newLoadingState[coin.id] = true;
+        preloadImage(coin['Coin Image'], coin.id);
+        if (coin.BacksideUrl) {
+          preloadImage(coin.BacksideUrl, coin.id, false);
+        }
+      });
+      setLoadingImages(newLoadingState);
+
+      setCoins([...coins, ...(data || [])]);
+      
+      // Check if there are more coins to load
+      const totalCount = count || 0;
+      setHasMore(coins.length + (data?.length || 0) < totalCount);
+    } catch (error) {
+      console.error('Error loading more coins:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [profile?.Username, loadingMore, hasMore, coins.length, loadingImages]);
+
   useEffect(() => {
     if (inView && !loadingMore && hasMore) {
       loadMoreCoins();
     }
-  }, [inView]);
+  }, [inView, loadMoreCoins]);
 
   const preloadImage = (src: string, coinId: number, isMainImage = true) => {
     const img = new Image();
@@ -164,46 +205,6 @@ export const Collection: React.FC = () => {
       console.error('Error fetching coins:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadMoreCoins = async () => {
-    if (!profile?.Username || loadingMore || !hasMore) return;
-
-    setLoadingMore(true);
-    try {
-      const start = coins.length;
-      const end = start + COINS_PER_PAGE - 1;
-
-      const { data, error, count } = await supabase
-        .from('Challenge Coin Table')
-        .select('*, created_at, "Has Copyright"', { count: 'exact' })
-        .eq('Username', profile.Username)
-        .order('Priority', { ascending: true })
-        .range(start, end);
-
-      if (error) throw error;
-
-      // Initialize loading state for new coins
-      const newLoadingState = { ...loadingImages };
-      (data || []).forEach(coin => {
-        newLoadingState[coin.id] = true;
-        preloadImage(coin['Coin Image'], coin.id);
-        if (coin.BacksideUrl) {
-          preloadImage(coin.BacksideUrl, coin.id, false);
-        }
-      });
-      setLoadingImages(newLoadingState);
-
-      setCoins([...coins, ...(data || [])]);
-      
-      // Check if there are more coins to load
-      const totalCount = count || 0;
-      setHasMore(coins.length + (data?.length || 0) < totalCount);
-    } catch (error) {
-      console.error('Error loading more coins:', error);
-    } finally {
-      setLoadingMore(false);
     }
   };
 
