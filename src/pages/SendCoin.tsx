@@ -142,6 +142,27 @@ export const SendCoin: React.FC = () => {
 
     setLoading(true);
     try {
+      // Call the webhook with the required data
+      try {
+        await fetch('https://hook.us2.make.com/d58fj9taqiti7anxodqyd90qomt19rxn', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            recipientEmail: targetEmail,
+            coinName: selectedCoin['Coin Name'],
+            quantity: quantity,
+            frontsideUrl: selectedCoin['Coin Image'],
+            senderName: senderUsername
+          }),
+        });
+        console.log('Webhook called successfully');
+      } catch (webhookError) {
+        console.error('Webhook call failed:', webhookError);
+        // Don't stop the transfer if webhook fails
+      }
+
       const { data, error } = await supabase.rpc('transfer_coins_with_note', {
         sender_email: user.email,
         receiver_email: targetEmail,
