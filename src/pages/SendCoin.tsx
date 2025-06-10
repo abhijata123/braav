@@ -79,10 +79,11 @@ export const SendCoin: React.FC = () => {
       if (userError) throw userError;
       setSenderUsername(userData.Username);
 
+      // Fixed: Filter by UserId (email) instead of Username to match backend validation
       const { data: coinsData, error: coinsError } = await supabase
         .from('Challenge Coin Table')
         .select('id, "Coin Name", "Coin Image", "Number Of Coins", available_quantity')
-        .eq('Username', userData.Username)
+        .eq('UserId', user.email)
         .gt('available_quantity', 0);
 
       if (coinsError) throw coinsError;
