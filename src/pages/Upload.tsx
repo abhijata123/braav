@@ -247,7 +247,7 @@ export const Upload: React.FC = () => {
         backUrlData = backUrl;
       }
 
-      // Save coin data to the database
+      // Save coin data to the database - FIXED: Use email as UserId
       const { error: dbError } = await supabase
         .from('Challenge Coin Table')
         .insert([
@@ -256,7 +256,7 @@ export const Upload: React.FC = () => {
             'Date Issued': formData.dateAcquired || new Date().toISOString().split('T')[0],
             'Coin Image': frontUrlData.publicUrl,
             'BacksideUrl': backUrlData?.publicUrl || null,
-            'UserId': userData.id.toString(),
+            'UserId': targetEmail, // FIXED: Use email instead of userData.id.toString()
             'Number Of Coins': 1,
             'Mode Of Acquiring': 'self added',
             'Notes': formData.description || '',
