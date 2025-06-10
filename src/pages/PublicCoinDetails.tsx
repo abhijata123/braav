@@ -307,20 +307,6 @@ export const PublicCoinDetails: React.FC = () => {
                   <p className="text-white">{coin['Number Of Coins']}</p>
                 </div>
 
-                {coin['Awarded By'] && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300">Awarded By</label>
-                    <p className="text-white">{coin['Awarded By']}</p>
-                  </div>
-                )}
-
-                {coin['Issuer Name'] && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300">Issuer Name</label>
-                    <p className="text-white">{coin['Issuer Name']}</p>
-                  </div>
-                )}
-
                 {userPrefs.Share_Notes && coin['Notes'] && (
                   <div>
                     <label className="block text-sm font-medium text-gray-300">Share Your Coin Story</label>

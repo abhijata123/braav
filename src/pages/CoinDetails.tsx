@@ -436,38 +436,6 @@ export const CoinDetails: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300">Awarded By</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editedCoin['Awarded By'] || ''}
-                      onChange={(e) =>
-                        setEditedCoin({ ...editedCoin, 'Awarded By': e.target.value })
-                      }
-                      className="mt-1 block w-full rounded-md border-gray-700 bg-gray-800 text-white"
-                    />
-                  ) : (
-                    <p className="text-white">{coin['Awarded By'] || 'Not specified'}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">Issuer Name</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editedCoin['Issuer Name'] || ''}
-                      onChange={(e) =>
-                        setEditedCoin({ ...editedCoin, 'Issuer Name': e.target.value })
-                      }
-                      className="mt-1 block w-full rounded-md border-gray-700 bg-gray-800 text-white"
-                    />
-                  ) : (
-                    <p className="text-white">{coin['Issuer Name'] || 'Not specified'}</p>
-                  )}
-                </div>
-
-                <div>
                   <div className="flex items-center justify-between">
                     <label className="block text-sm font-medium text-gray-300">Share Your Coin Story</label>
                     <div className="flex items-center">
