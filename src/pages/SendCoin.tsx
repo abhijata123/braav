@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, ArrowLeft, Loader2, Search, Mail, UserPlus } from 'lucide-react';
+import { Send, ArrowLeft, Loader2, Search, Mail } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -35,9 +35,6 @@ export const SendCoin: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [senderUsername, setSenderUsername] = useState('');
-  const [showInviteForm, setShowInviteForm] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviting, setInviting] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState('');
   const [useCustomEmail, setUseCustomEmail] = useState(false);
 
@@ -114,34 +111,6 @@ export const SendCoin: React.FC = () => {
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to load users');
-    }
-  };
-
-  const handleInvite = async () => {
-    if (!inviteEmail || !user?.email) return;
-
-    setInviting(true);
-    try {
-      await fetch('https://hook.us2.make.com/8qox830ayn172pgl2ug2tuu9oit53vty', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: senderUsername,
-          userEmail: user.email,
-          inviteEmail: inviteEmail
-        }),
-      });
-
-      toast.success('Invitation sent successfully!');
-      setInviteEmail('');
-      setShowInviteForm(false);
-    } catch (error) {
-      console.error('Error sending invitation:', error);
-      toast.error('Failed to send invitation');
-    } finally {
-      setInviting(false);
     }
   };
 
@@ -330,43 +299,10 @@ export const SendCoin: React.FC = () => {
                             }}
                             className="rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-blue-500"
                           />
-                          Send to any email
+                          Send to external email
                         </label>
-                        <button
-                          onClick={() => setShowInviteForm(!showInviteForm)}
-                          className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
-                        >
-                          <UserPlus size={16} />
-                          Invite User
-                        </button>
                       </div>
                     </div>
-
-                    {showInviteForm && (
-                      <div className="mb-4 p-4 bg-gray-800 rounded-lg">
-                        <div className="flex gap-2">
-                          <input
-                            type="email"
-                            value={inviteEmail}
-                            onChange={(e) => setInviteEmail(e.target.value)}
-                            placeholder="Enter email address"
-                            className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                          <button
-                            onClick={handleInvite}
-                            disabled={inviting || !inviteEmail}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-                          >
-                            {inviting ? (
-                              <Loader2 className="animate-spin h-4 w-4" />
-                            ) : (
-                              <Mail size={16} />
-                            )}
-                            Invite
-                          </button>
-                        </div>
-                      </div>
-                    )}
 
                     {useCustomEmail ? (
                       <div>
