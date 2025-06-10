@@ -13,6 +13,11 @@ interface LocationState {
   message?: string;
 }
 
+// Email normalization utility function
+const normalizeEmail = (email: string): string => {
+  return email.toLowerCase().trim();
+};
+
 export const Signup: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -114,6 +119,9 @@ export const Signup: React.FC = () => {
       return false;
     }
 
+    // Normalize email for validation
+    const normalizedEmail = normalizeEmail(formData.email);
+
     // Check if username already exists
     try {
       const { data: existingUser, error } = await supabase
@@ -133,12 +141,12 @@ export const Signup: React.FC = () => {
       return false;
     }
 
-    // Check if email already exists in User Dps
+    // Check if email already exists in User Dps (using normalized email)
     try {
       const { data: existingEmail, error } = await supabase
         .from('User Dps')
         .select('email')
-        .eq('email', formData.email)
+        .eq('email', normalizedEmail)
         .maybeSingle();
 
       if (error) throw error;
@@ -167,7 +175,7 @@ export const Signup: React.FC = () => {
       if (profilePic) {
         const { error: uploadError } = await supabase.storage
           .from('User Images')
-          .upload(formData.email, profilePic, {
+          .upload(normalizeEmail(formData.email), profilePic, {
             cacheControl: '3600',
             upsert: true
           });
@@ -176,7 +184,7 @@ export const Signup: React.FC = () => {
 
         const { data: urlData } = supabase.storage
           .from('User Images')
-          .getPublicUrl(formData.email);
+          .getPublicUrl(normalizeEmail(formData.email));
 
         profileImageUrl = urlData.publicUrl;
       } else {
@@ -187,10 +195,10 @@ export const Signup: React.FC = () => {
       // Use default password for all users
       const defaultPassword = '12345678@';
 
-      // Navigate to loader page with all necessary data
+      // Navigate to loader page with all necessary data (using normalized email)
       navigate('/loading', {
         state: {
-          email: formData.email,
+          email: normalizeEmail(formData.email),
           password: defaultPassword,
           username: formData.username.trim(),
           bio: formData.bio,

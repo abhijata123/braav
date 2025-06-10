@@ -6,6 +6,11 @@ import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { Logo } from '../components/Logo';
 
+// Email normalization utility function
+const normalizeEmail = (email: string): string => {
+  return email.toLowerCase().trim();
+};
+
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -18,11 +23,14 @@ export const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      // Check if user exists in User Dps table
+      // Normalize the email before processing
+      const normalizedEmail = normalizeEmail(email);
+
+      // Check if user exists in User Dps table (using normalized email)
       const { data: userData, error: userError } = await supabase
         .from('User Dps')
         .select('email')
-        .eq('email', email)
+        .eq('email', normalizedEmail)
         .single();
 
       // If user doesn't exist, redirect to signup
@@ -30,7 +38,7 @@ export const Login: React.FC = () => {
         toast.error('Please sign up first to create an account');
         navigate('/signup', { 
           state: { 
-            email,
+            email: normalizedEmail,
             message: 'Please create an account before attempting to log in'
           } 
         });
@@ -38,9 +46,9 @@ export const Login: React.FC = () => {
         return;
       }
 
-      // If user exists, proceed with magic link login
+      // If user exists, proceed with magic link login (using normalized email)
       const { error: signInError } = await supabase.auth.signInWithOtp({
-        email,
+        email: normalizedEmail,
         options: {
           emailRedirectTo: window.location.origin
         }
@@ -77,7 +85,7 @@ export const Login: React.FC = () => {
             <div className="bg-blue-500/10 text-blue-500 p-4 rounded-lg">
               <h2 className="text-lg font-medium mb-2">Check your email</h2>
               <p className="text-sm">
-                We've sent a magic link to <strong>{email}</strong>
+                We've sent a magic link to <strong>{normalizeEmail(email)}</strong>
               </p>
               <p className="text-sm mt-2">
                 Click the link in the email to sign in to your account.

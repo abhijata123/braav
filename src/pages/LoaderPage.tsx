@@ -13,6 +13,11 @@ interface LocationState {
   profileImage: string;
 }
 
+// Email normalization utility function
+const normalizeEmail = (email: string): string => {
+  return email.toLowerCase().trim();
+};
+
 export const LoaderPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,15 +43,18 @@ export const LoaderPage: React.FC = () => {
     }
 
     try {
+      // Normalize the email before processing
+      const normalizedEmail = normalizeEmail(state.email);
+
       // Step 1: Create Supabase auth user first
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: state.email,
+        email: normalizedEmail,
         password: state.password
       });
 
       if (authError) throw authError;
 
-      // Step 2: Hit the webhook with all required data
+      // Step 2: Hit the webhook with all required data (using normalized email)
       const webhookResponse = await fetch('https://hook.us2.make.com/hbxz7jippoxosmi3129c81t3gm3hrxmd', {
         method: 'POST',
         headers: {
@@ -55,7 +63,7 @@ export const LoaderPage: React.FC = () => {
         body: JSON.stringify({
           username: state.username,
           supabaseAuthId: authData.user?.id,
-          email: state.email,
+          email: normalizedEmail, // Use normalized email
           welcomeCoinFront: 'https://credhwdecybwcrkmhtrn.supabase.co/storage/v1/object/public/Coin%20Images//2025-04-29T21-38-55-680Z-jp534ptzzb.png',
           welcomeCoinBack: 'https://credhwdecybwcrkmhtrn.supabase.co/storage/v1/object/public/Coin%20Images//2025-04-29T21-38-58-298Z-0wsvvah9cuzg.png'
         }),
@@ -65,13 +73,13 @@ export const LoaderPage: React.FC = () => {
         throw new Error('Failed to notify webhook');
       }
 
-      // Step 3: Create user profile in User Dps table
+      // Step 3: Create user profile in User Dps table (using normalized email)
       const nextId = await getNextUserId();
       const { error: profileError } = await supabase
         .from('User Dps')
         .insert({
           id: nextId,
-          email: state.email,
+          email: normalizedEmail, // Use normalized email
           Username: state.username,
           Bio: state.bio || '',
           'piture link': state.profileImage,

@@ -21,6 +21,11 @@ interface User {
   Status: string | null;
 }
 
+// Email normalization utility function
+const normalizeEmail = (email: string): string => {
+  return email.toLowerCase().trim();
+};
+
 export const SendCoin: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -120,7 +125,7 @@ export const SendCoin: React.FC = () => {
       return;
     }
 
-    // Determine recipient email
+    // Determine recipient email and normalize it
     let targetEmail = '';
     if (useCustomEmail) {
       if (!recipientEmail.trim()) {
@@ -131,13 +136,13 @@ export const SendCoin: React.FC = () => {
         toast.error('Please enter a valid email address');
         return;
       }
-      targetEmail = recipientEmail.trim();
+      targetEmail = normalizeEmail(recipientEmail.trim());
     } else {
       if (!selectedUser) {
         toast.error('Please select a recipient');
         return;
       }
-      targetEmail = selectedUser.email;
+      targetEmail = normalizeEmail(selectedUser.email);
     }
 
     setLoading(true);
@@ -163,8 +168,11 @@ export const SendCoin: React.FC = () => {
         // Don't stop the transfer if webhook fails
       }
 
+      // Normalize sender email as well
+      const normalizedSenderEmail = normalizeEmail(user.email!);
+
       const { data, error } = await supabase.rpc('transfer_coins_with_note', {
-        sender_email: user.email,
+        sender_email: normalizedSenderEmail,
         receiver_email: targetEmail,
         p_coin_id: selectedCoin.id,
         p_quantity: quantity,
