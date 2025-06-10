@@ -38,6 +38,8 @@ export const SendCoin: React.FC = () => {
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [useCustomEmail, setUseCustomEmail] = useState(false);
 
   const parentRef = React.useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
@@ -144,26 +146,55 @@ export const SendCoin: React.FC = () => {
   };
 
   const handleTransfer = async () => {
-    if (!selectedCoin || !user || !selectedUser) {
-      toast.error('Please select a coin and a recipient');
+    if (!selectedCoin || !user) {
+      toast.error('Please select a coin');
       return;
+    }
+
+    // Determine recipient email
+    let targetEmail = '';
+    if (useCustomEmail) {
+      if (!recipientEmail.trim()) {
+        toast.error('Please enter a recipient email');
+        return;
+      }
+      if (!recipientEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        toast.error('Please enter a valid email address');
+        return;
+      }
+      targetEmail = recipientEmail.trim();
+    } else {
+      if (!selectedUser) {
+        toast.error('Please select a recipient');
+        return;
+      }
+      targetEmail = selectedUser.email;
     }
 
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc('transfer_coins_with_note', {
         sender_email: user.email,
-        receiver_email: selectedUser.email,
+        receiver_email: targetEmail,
         p_coin_id: selectedCoin.id,
         p_quantity: quantity,
         p_note: note.trim() || null
       });
 
       if (error) throw error;
-      if (data !== 'success') throw new Error(data);
-
-      toast.success('Coins sent successfully!');
-      navigate('/my-collection');
+      
+      if (data === 'success') {
+        toast.success('Coins sent successfully!');
+        navigate('/my-collection');
+      } else if (data === 'pending') {
+        toast.success('Coins queued successfully! They will be delivered when the recipient signs up.', {
+          duration: 5000,
+          icon: '⏳'
+        });
+        navigate('/my-collection');
+      } else {
+        throw new Error(data);
+      }
     } catch (error) {
       console.error('Transfer error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to send coins');
@@ -280,17 +311,35 @@ export const SendCoin: React.FC = () => {
                   </div>
 
                   <div>
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-4">
                       <label className="block text-sm font-medium text-gray-200">
                         Select Recipient
                       </label>
-                      <button
-                        onClick={() => setShowInviteForm(!showInviteForm)}
-                        className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
-                      >
-                        <UserPlus size={16} />
-                        Invite User
-                      </button>
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 text-sm text-gray-300">
+                          <input
+                            type="checkbox"
+                            checked={useCustomEmail}
+                            onChange={(e) => {
+                              setUseCustomEmail(e.target.checked);
+                              if (e.target.checked) {
+                                setSelectedUser(null);
+                              } else {
+                                setRecipientEmail('');
+                              }
+                            }}
+                            className="rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-blue-500"
+                          />
+                          Send to any email
+                        </label>
+                        <button
+                          onClick={() => setShowInviteForm(!showInviteForm)}
+                          className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
+                        >
+                          <UserPlus size={16} />
+                          Invite User
+                        </button>
+                      </div>
                     </div>
 
                     {showInviteForm && (
@@ -319,68 +368,85 @@ export const SendCoin: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search users..."
-                        className="w-full px-4 py-3 pl-10 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    </div>
-
-                    <div 
-                      ref={parentRef}
-                      className="mt-4 h-60 overflow-y-auto"
-                    >
-                      <div
-                        style={{
-                          height: `${rowVirtualizer.getTotalSize()}px`,
-                          width: '100%',
-                          position: 'relative',
-                        }}
-                      >
-                        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                          const user = filteredUsers[virtualRow.index];
-                          return (
-                            <button
-                              key={user.email}
-                              onClick={() => setSelectedUser(selectedUser?.email === user.email ? null : user)}
-                              className={`absolute top-0 left-0 w-full ${
-                                selectedUser?.email === user.email
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-                              }`}
-                              style={{
-                                height: `${virtualRow.size}px`,
-                                transform: `translateY(${virtualRow.start}px)`,
-                              }}
-                            >
-                              <div className="flex items-center gap-3 p-3 rounded-lg transition-colors">
-                                <img
-                                  src={user['piture link'] || `https://api.dicebear.com/7.x/initials/svg?seed=${user.Username}`}
-                                  alt={user.Username}
-                                  className="w-10 h-10 rounded-full"
-                                  loading="lazy"
-                                />
-                                <div className="flex-1 text-left">
-                                  <p className="font-medium">{user.Username}</p>
-                                  {user.Status && (
-                                    <p className="text-sm text-gray-400">{user.Status}</p>
-                                  )}
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
+                    {useCustomEmail ? (
+                      <div>
+                        <input
+                          type="email"
+                          value={recipientEmail}
+                          onChange={(e) => setRecipientEmail(e.target.value)}
+                          placeholder="Enter recipient's email address"
+                          className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p className="text-xs text-gray-400 mt-2">
+                          💡 If this person hasn't signed up yet, the coins will be queued and delivered when they join!
+                        </p>
                       </div>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Search users..."
+                            className="w-full px-4 py-3 pl-10 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                        </div>
+
+                        <div 
+                          ref={parentRef}
+                          className="mt-4 h-60 overflow-y-auto"
+                        >
+                          <div
+                            style={{
+                              height: `${rowVirtualizer.getTotalSize()}px`,
+                              width: '100%',
+                              position: 'relative',
+                            }}
+                          >
+                            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                              const user = filteredUsers[virtualRow.index];
+                              return (
+                                <button
+                                  key={user.email}
+                                  onClick={() => setSelectedUser(selectedUser?.email === user.email ? null : user)}
+                                  className={`absolute top-0 left-0 w-full ${
+                                    selectedUser?.email === user.email
+                                      ? 'bg-blue-600 text-white'
+                                      : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                                  }`}
+                                  style={{
+                                    height: `${virtualRow.size}px`,
+                                    transform: `translateY(${virtualRow.start}px)`,
+                                  }}
+                                >
+                                  <div className="flex items-center gap-3 p-3 rounded-lg transition-colors">
+                                    <img
+                                      src={user['piture link'] || `https://api.dicebear.com/7.x/initials/svg?seed=${user.Username}`}
+                                      alt={user.Username}
+                                      className="w-10 h-10 rounded-full"
+                                      loading="lazy"
+                                    />
+                                    <div className="flex-1 text-left">
+                                      <p className="font-medium">{user.Username}</p>
+                                      {user.Status && (
+                                        <p className="text-sm text-gray-400">{user.Status}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <button
                     onClick={handleTransfer}
-                    disabled={loading || !selectedUser}
+                    disabled={loading || (!selectedUser && !useCustomEmail) || (useCustomEmail && !recipientEmail.trim())}
                     className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                   >
                     {loading ? (
