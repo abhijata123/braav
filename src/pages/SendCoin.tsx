@@ -31,6 +31,7 @@ export const SendCoin: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [senderUsername, setSenderUsername] = useState('');
@@ -149,11 +150,12 @@ export const SendCoin: React.FC = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('transfer_coins', {
+      const { data, error } = await supabase.rpc('transfer_coins_with_note', {
         sender_email: user.email,
         receiver_email: selectedUser.email,
         p_coin_id: selectedCoin.id,
-        p_quantity: quantity
+        p_quantity: quantity,
+        p_note: note.trim() || null
       });
 
       if (error) throw error;
@@ -252,6 +254,28 @@ export const SendCoin: React.FC = () => {
                       onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
                       className="w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-200 mb-2">
+                      Add a Note (Optional)
+                    </label>
+                    <textarea
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder="Add a personal note about this coin..."
+                      rows={3}
+                      maxLength={500}
+                      className="w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      {note.length}/500 characters
+                      {note.trim() && (
+                        <span className="ml-2 text-yellow-400">
+                          • This note will replace the existing coin story for the recipient
+                        </span>
+                      )}
+                    </p>
                   </div>
 
                   <div>
