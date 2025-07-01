@@ -6,7 +6,7 @@
   "background_color": "#0d182a",
   "display": "standalone",
   "scope": "/",
-  "start_url": "/",
+  "start_url": "https://coins.braav.co",
   "icons": [
     {
       "src": "/braavlogo.png",
