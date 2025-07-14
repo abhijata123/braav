@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Rotate3D, User, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -10,6 +10,8 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { NewCoinBadge } from '../components/NewCoinBadge';
 import { MessageNotification } from '../components/MessageNotification';
+import { CoinSkeleton } from '../components/CoinSkeleton';
+import { useInView } from 'react-intersection-observer';
 
 interface User {
   Username: string;
@@ -40,14 +42,19 @@ interface Coin {
   };
 }
 
+const COINS_PER_PAGE = 12;
+
 export const CoinForum: React.FC = () => {
   const { user } = useAuthStore();
   const { theme, initializeTheme } = useThemeStore();
   const [coins, setCoins] = useState<Coin[]>([]);
-  const [filteredCoins, setFilteredCoins] = useState<Coin[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
   const [flippedCoins, setFlippedCoins] = useState<Record<number, boolean>>({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [uniqueUsers, setUniqueUsers] = useState<{ Username: string; 'piture link': string | null; Status: string | null; coinCount: number; is_admin: boolean; is_founding_member: boolean }[]>([]);
@@ -59,6 +66,11 @@ export const CoinForum: React.FC = () => {
     sender: { name: string; avatar?: string; uid: string };
     message: string;
   } | null>(null);
+
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0,
+    rootMargin: '200px 0px',
+  });
 
   // Initialize theme for the current user
   useEffect(() => {
@@ -157,10 +169,59 @@ export const CoinForum: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Debounce search term
   useEffect(() => {
-    fetchCoins();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset and fetch when search term changes
+  useEffect(() => {
+    setCoins([]);
+    setPage(0);
+    setHasMore(true);
+    fetchPaginatedCoins(0, debouncedSearchTerm);
+  }, [debouncedSearchTerm]);
+
+  // Load more coins when scrolling
+  const loadMoreCoins = useCallback(() => {
+    if (!loadingMore && hasMore && !loading) {
+      fetchPaginatedCoins(page + 1, debouncedSearchTerm);
+    }
+  }, [loadingMore, hasMore, loading, page, debouncedSearchTerm]);
+
+  useEffect(() => {
+    if (inView) {
+      loadMoreCoins();
+    }
+  }, [inView, loadMoreCoins]);
+
+  // Update unique users when coins change
+  useEffect(() => {
+    const userMap = new Map();
+    coins.forEach(coin => {
+      if (coin.owner && coin.Username) {
+        if (!userMap.has(coin.Username)) {
+          userMap.set(coin.Username, {
+            Username: coin.Username,
+            'piture link': coin.owner ? coin.owner['piture link'] : null,
+            Status: coin.owner ? coin.owner.Status : null,
+            coinCount: 1,
+            is_admin: coin.owner ? coin.owner.is_admin : false,
+            is_founding_member: coin.owner ? coin.owner.is_founding_member : false
+          });
+        } else {
+          userMap.get(coin.Username).coinCount++;
+        }
+      }
+    });
+    setUniqueUsers(Array.from(userMap.values()));
+  }, [coins]);
+
+  // Generate suggestions from loaded coins
   useEffect(() => {
     if (coins.length > 0 && searchTerm.trim().length > 0) {
       const uniqueNames = [...new Set(coins
@@ -174,37 +235,6 @@ export const CoinForum: React.FC = () => {
       setShowSuggestions(false);
     }
   }, [searchTerm, coins]);
-
-  useEffect(() => {
-    if (coins.length > 0) {
-      const filtered = coins.filter(coin => {
-        const matchesSearch = searchTerm === '' || 
-          coin['Coin Name'].toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesSearch;
-      });
-      
-      setFilteredCoins(filtered);
-
-      const userMap = new Map();
-      filtered.forEach(coin => {
-        if (coin.owner && coin.Username) {
-          if (!userMap.has(coin.Username)) {
-            userMap.set(coin.Username, {
-              Username: coin.Username,
-              'piture link': coin.owner ? coin.owner['piture link'] : null,
-              Status: coin.owner ? coin.owner.Status : null,
-              coinCount: 1,
-              is_admin: coin.owner ? coin.owner.is_admin : false,
-              is_founding_member: coin.owner ? coin.owner.is_founding_member : false
-            });
-          } else {
-            userMap.get(coin.Username).coinCount++;
-          }
-        }
-      });
-      setUniqueUsers(Array.from(userMap.values()));
-    }
-  }, [coins, searchTerm]);
 
   const preloadImage = (src: string, coinId: number, isMainImage = true) => {
     const img = new Image();
@@ -228,25 +258,45 @@ export const CoinForum: React.FC = () => {
     };
   };
 
-  const fetchCoins = async () => {
+  const fetchPaginatedCoins = async (currentPage: number, currentSearchTerm: string) => {
+    const isInitialLoad = currentPage === 0;
+    
+    if (isInitialLoad) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
     try {
-      const { data: coinData, error: coinError } = await supabase
+      const start = currentPage * COINS_PER_PAGE;
+      const end = start + COINS_PER_PAGE - 1;
+
+      let query = supabase
         .from('Challenge Coin Table')
         .select('*, created_at, "Has Copyright"')
         .eq('Public Display', true)
-        .order('created_at', { ascending: false }); // Order by creation date first
+        .order('created_at', { ascending: false })
+        .range(start, end);
+
+      // Apply search filter if search term exists
+      if (currentSearchTerm.trim()) {
+        query = query.ilike('Coin Name', `%${currentSearchTerm}%`);
+      }
+
+      const { data: coinData, error: coinError } = await query;
 
       if (coinError) throw coinError;
 
       if (!coinData || coinData.length === 0) {
-        setCoins([]);
-        setFilteredCoins([]);
-        setLoading(false);
+        if (isInitialLoad) {
+          setCoins([]);
+        }
+        setHasMore(false);
         return;
       }
 
+      // Fetch user data for coin owners
       const usernames = [...new Set(coinData.map(coin => coin.Username))];
-
       const { data: userData, error: userError } = await supabase
         .from('User Dps')
         .select('Username, "piture link", Status, is_admin, is_founding_member')
@@ -267,11 +317,8 @@ export const CoinForum: React.FC = () => {
         }
       }));
 
-      setCoins(coinsWithOwner);
-      setFilteredCoins(coinsWithOwner);
-      
-      // Initialize loading state for each coin
-      const newLoadingState: Record<number, boolean> = {};
+      // Initialize loading state for new coins
+      const newLoadingState = isInitialLoad ? {} : { ...loadingImages };
       coinsWithOwner.forEach(coin => {
         newLoadingState[coin.id] = true;
         preloadImage(coin['Coin Image'], coin.id);
@@ -280,11 +327,28 @@ export const CoinForum: React.FC = () => {
         }
       });
       setLoadingImages(newLoadingState);
+
+      // Update coins state
+      if (isInitialLoad) {
+        setCoins(coinsWithOwner);
+      } else {
+        setCoins(prev => [...prev, ...coinsWithOwner]);
+      }
+
+      // Update pagination state
+      setPage(currentPage);
+      setHasMore(coinData.length === COINS_PER_PAGE);
+
     } catch (error) {
       console.error('Error fetching coins:', error);
       toast.error('Failed to load coins');
+      if (isInitialLoad) {
+        setCoins([]);
+      }
+      setHasMore(false);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -311,14 +375,6 @@ export const CoinForum: React.FC = () => {
     e.preventDefault();
     return false;
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0d182a] flex items-center justify-center">
-        <div className="text-white">Loading coins...</div>
-      </div>
-    );
-  }
 
   return (
     <div 
@@ -381,9 +437,10 @@ export const CoinForum: React.FC = () => {
             </div>
           </div>
 
-          {searchTerm && (
+          {(searchTerm || debouncedSearchTerm) && (
             <div className="text-gray-400 text-sm">
-              Found {filteredCoins.length} {filteredCoins.length === 1 ? 'result' : 'results'} for "{searchTerm}"
+              Found {coins.length} {coins.length === 1 ? 'result' : 'results'} for "{debouncedSearchTerm || searchTerm}"
+              {hasMore && ' (loading more...)'}
             </div>
           )}
         </div>
@@ -391,7 +448,7 @@ export const CoinForum: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <div className="lg:col-span-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCoins.map((coin) => (
+              {coins.map((coin) => (
                 <div
                   key={coin.id}
                   className={`bg-white/5 backdrop-blur-sm rounded-lg overflow-hidden ${
@@ -512,21 +569,52 @@ export const CoinForum: React.FC = () => {
                       <AdminActions 
                         coinId={coin.id} 
                         userEmail={coin.UserId}
-                        onSuccess={fetchCoins}
+                        onSuccess={() => {
+                          // Remove the deleted coin from the current coins array
+                          setCoins(prev => prev.filter(c => c.id !== coin.id));
+                        }}
                       />
                     </div>
                   </div>
                 </div>
               ))}
 
-              {filteredCoins.length === 0 && (
-                <div className="col-span-full flex flex-col items-center justify-center text-center text-gray-400 py-12">
-                  <Search className="h-12 w-12 mb-4 opacity-50" />
-                  <p className="text-lg">No coins found matching your search.</p>
-                  <p className="text-sm mt-2">Try adjusting your search terms.</p>
-                </div>
-              )}
+              {/* Loading skeletons */}
+              {(loading || loadingMore) && Array.from({ length: loading ? 6 : 3 }).map((_, index) => (
+                <CoinSkeleton key={`skeleton-${index}`} />
+              ))}
             </div>
+
+            {/* Loading more indicator */}
+            {loadingMore && (
+              <div className="text-center mt-8">
+                <div className="text-gray-400">Loading more coins...</div>
+              </div>
+            )}
+
+            {/* All coins loaded message */}
+            {!hasMore && coins.length > 0 && !loading && (
+              <div className="text-center text-gray-400 mt-8">
+                <p>✨ All coins loaded ({coins.length} total)</p>
+                <p className="text-sm mt-1">You've reached the end of the forum!</p>
+              </div>
+            )}
+
+            {/* No coins found */}
+            {coins.length === 0 && !loading && (
+              <div className="col-span-full flex flex-col items-center justify-center text-center text-gray-400 py-12">
+                <Search className="h-12 w-12 mb-4 opacity-50" />
+                <p className="text-lg">
+                  {debouncedSearchTerm ? 'No coins found matching your search.' : 'No public coins available.'}
+                </p>
+                <p className="text-sm mt-2">
+                  {debouncedSearchTerm ? 'Try adjusting your search terms.' : 'Check back later for new coins!'}
+                </p>
+              </div>
+            )}
+
+            {/* Load more trigger */}
+            <div ref={loadMoreRef} className="h-10" />
           </div>
 
           <div className="lg:col-span-1">
@@ -578,7 +666,7 @@ export const CoinForum: React.FC = () => {
                   </Link>
                 ))}
 
-                {uniqueUsers.length === 0 && (
+                {uniqueUsers.length === 0 && !loading && (
                   <div className="text-center text-gray-400">
                     <p>No contributors found</p>
                   </div>
