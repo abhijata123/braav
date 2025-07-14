@@ -427,18 +427,6 @@ export const CoinForum: React.FC = () => {
                             userSelect: 'none',
                             pointerEvents: 'none'
                           }}
-                          onLoad={() => {
-                            setLoadingImages(prev => ({
-                              ...prev,
-                              [coin.id]: false
-                            }));
-                          }}
-                          onError={() => {
-                            setLoadingImages(prev => ({
-                              ...prev,
-                              [coin.id]: false
-                            }));
-                          }}
                         />
                         {coin['Has Copyright'] && (
                           <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
