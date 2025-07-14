@@ -652,17 +652,17 @@ export const CoinForum: React.FC = () => {
                     to={`/collection/${collector.Username}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-colors"
+                    className="block bg-white/5 rounded-lg p-3 sm:p-4 hover:bg-white/10 transition-colors"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <div className="relative">
-                        <div className="w-12 h-12 rounded-full overflow-hidden">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0">
                           <img
                             src={collector['piture link'] ? collector['piture link'] : `https://api.dicebear.com/7.x/initials/svg?seed=${collector.Username}`}
                             alt={collector.Username}
                             className="w-full h-full object-cover"
-                            width="48"
-                            height="48"
+                            width="40"
+                            height="40"
                             loading="lazy"
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           />
@@ -671,18 +671,20 @@ export const CoinForum: React.FC = () => {
                           <UserBadges 
                             isAdmin={collector.is_admin} 
                             isFoundingMember={collector.is_founding_member}
-                            size={14}
+                            size={12}
                           />
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-white font-medium truncate">{collector.Username}</p>
+                        <p className="text-white font-medium truncate text-sm sm:text-base">{collector.Username}</p>
                         {collector.Status && (
-                          <p className="text-sm text-gray-400 truncate">{collector.Status}</p>
+                          <p className="text-xs sm:text-sm text-gray-400 truncate">{collector.Status}</p>
                         )}
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-blue-400">{collector.coinCount} unique coins</p>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-xs sm:text-sm text-blue-400 font-medium">{collector.coinCount}</p>
+                        <p className="text-xs text-gray-400 hidden sm:block">unique coins</p>
+                        <p className="text-xs text-gray-400 sm:hidden">coins</p>
                       </div>
                     </div>
                   </Link>
