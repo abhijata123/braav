@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, Rotate3D, User, Search } from 'lucide-react';
+import { Star, Rotate3D, User, Search, X, Users } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useThemeStore } from '../store/themeStore';
 import { getBackgroundImage } from '../utils/theme';
-import { AdminActions } from '../components/AdminActions';
 import { UserBadges } from '../components/UserBadges';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
@@ -40,10 +39,22 @@ interface Coin {
   };
 }
 
+interface CoinOwner {
+  id: number;
+  Username: string;
+  'piture link': string | null;
+  Status: string | null;
+  is_admin: boolean;
+  is_founding_member: boolean;
+  email: string;
+}
+
 export const CoinForum: React.FC = () => {
   const { user } = useAuthStore();
   const { theme, initializeTheme } = useThemeStore();
   const [coins, setCoins] = useState<Coin[]>([]);
+  const [uniqueCoins, setUniqueCoins] = useState<Coin[]>([]);
+  const [uniqueCoinOwners, setUniqueCoinOwners] = useState<Record<string, CoinOwner[]>>({});
   const [filteredCoins, setFilteredCoins] = useState<Coin[]>([]);
   const [loading, setLoading] = useState(true);
   const [flippedCoins, setFlippedCoins] = useState<Record<number, boolean>>({});
@@ -51,6 +62,8 @@ export const CoinForum: React.FC = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [uniqueUsers, setUniqueUsers] = useState<{ Username: string; 'piture link': string | null; Status: string | null; coinCount: number; is_admin: boolean; is_founding_member: boolean }[]>([]);
+  const [showOwnersModal, setShowOwnersModal] = useState(false);
+  const [selectedCoinForOwners, setSelectedCoinForOwners] = useState<Coin | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [isCometChatInitialized, setIsCometChatInitialized] = useState(false);
   const [loadingImages, setLoadingImages] = useState<Record<number, boolean>>({});
@@ -162,8 +175,8 @@ export const CoinForum: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (coins.length > 0 && searchTerm.trim().length > 0) {
-      const uniqueNames = [...new Set(coins
+    if (uniqueCoins.length > 0 && searchTerm.trim().length > 0) {
+      const uniqueNames = [...new Set(uniqueCoins
         .map(coin => coin['Coin Name'])
         .filter(name => name.toLowerCase().includes(searchTerm.toLowerCase()))
       )];
@@ -173,11 +186,11 @@ export const CoinForum: React.FC = () => {
       setSuggestions([]);
       setShowSuggestions(false);
     }
-  }, [searchTerm, coins]);
+  }, [searchTerm, uniqueCoins]);
 
   useEffect(() => {
-    if (coins.length > 0) {
-      const filtered = coins.filter(coin => {
+    if (uniqueCoins.length > 0) {
+      const filtered = uniqueCoins.filter(coin => {
         const matchesSearch = searchTerm === '' || 
           coin['Coin Name'].toLowerCase().includes(searchTerm.toLowerCase());
         return matchesSearch;
@@ -185,26 +198,28 @@ export const CoinForum: React.FC = () => {
       
       setFilteredCoins(filtered);
 
+      // Update unique users based on all owners of displayed coins
       const userMap = new Map();
       filtered.forEach(coin => {
-        if (coin.owner && coin.Username) {
-          if (!userMap.has(coin.Username)) {
-            userMap.set(coin.Username, {
-              Username: coin.Username,
-              'piture link': coin.owner ? coin.owner['piture link'] : null,
-              Status: coin.owner ? coin.owner.Status : null,
+        const owners = uniqueCoinOwners[coin['Coin Name']] || [];
+        owners.forEach(owner => {
+          if (!userMap.has(owner.Username)) {
+            userMap.set(owner.Username, {
+              Username: owner.Username,
+              'piture link': owner['piture link'],
+              Status: owner.Status,
               coinCount: 1,
-              is_admin: coin.owner ? coin.owner.is_admin : false,
-              is_founding_member: coin.owner ? coin.owner.is_founding_member : false
+              is_admin: owner.is_admin,
+              is_founding_member: owner.is_founding_member
             });
           } else {
-            userMap.get(coin.Username).coinCount++;
+            userMap.get(owner.Username).coinCount++;
           }
-        }
+        });
       });
       setUniqueUsers(Array.from(userMap.values()));
     }
-  }, [coins, searchTerm]);
+  }, [uniqueCoins, searchTerm, uniqueCoinOwners]);
 
   const preloadImage = (src: string, coinId: number, isMainImage = true) => {
     const img = new Image();
@@ -234,12 +249,13 @@ export const CoinForum: React.FC = () => {
         .from('Challenge Coin Table')
         .select('*, created_at, "Has Copyright"')
         .eq('Public Display', true)
-        .order('created_at', { ascending: false }); // Order by creation date first
+        .order('created_at', { ascending: false });
 
       if (coinError) throw coinError;
 
       if (!coinData || coinData.length === 0) {
         setCoins([]);
+        setUniqueCoins([]);
         setFilteredCoins([]);
         setLoading(false);
         return;
@@ -249,7 +265,7 @@ export const CoinForum: React.FC = () => {
 
       const { data: userData, error: userError } = await supabase
         .from('User Dps')
-        .select('Username, "piture link", Status, is_admin, is_founding_member')
+        .select('Username, "piture link", Status, is_admin, is_founding_member, email')
         .in('Username', usernames);
 
       if (userError) throw userError;
@@ -268,11 +284,47 @@ export const CoinForum: React.FC = () => {
       }));
 
       setCoins(coinsWithOwner);
-      setFilteredCoins(coinsWithOwner);
+
+      // Process unique coins and their owners
+      const coinsByName = new Map<string, { coin: Coin; owners: CoinOwner[] }>();
       
-      // Initialize loading state for each coin
-      const newLoadingState: Record<number, boolean> = {};
       coinsWithOwner.forEach(coin => {
+        const coinName = coin['Coin Name'];
+        const owner: CoinOwner = {
+          id: coin.id,
+          Username: coin.Username,
+          'piture link': coin.owner['piture link'],
+          Status: coin.owner.Status,
+          is_admin: coin.owner.is_admin,
+          is_founding_member: coin.owner.is_founding_member,
+          email: coin.UserId
+        };
+
+        if (coinsByName.has(coinName)) {
+          coinsByName.get(coinName)!.owners.push(owner);
+        } else {
+          coinsByName.set(coinName, {
+            coin: coin,
+            owners: [owner]
+          });
+        }
+      });
+
+      const uniqueCoinsArray: Coin[] = [];
+      const ownersMap: Record<string, CoinOwner[]> = {};
+
+      coinsByName.forEach(({ coin, owners }, coinName) => {
+        uniqueCoinsArray.push(coin);
+        ownersMap[coinName] = owners;
+      });
+
+      setUniqueCoins(uniqueCoinsArray);
+      setUniqueCoinOwners(ownersMap);
+      setFilteredCoins(uniqueCoinsArray);
+      
+      // Initialize loading state for each unique coin
+      const newLoadingState: Record<number, boolean> = {};
+      uniqueCoinsArray.forEach(coin => {
         newLoadingState[coin.id] = true;
         preloadImage(coin['Coin Image'], coin.id);
         if (coin.BacksideUrl) {
@@ -306,10 +358,112 @@ export const CoinForum: React.FC = () => {
     }));
   };
 
+  const handleCoinClick = (coin: Coin) => {
+    setSelectedCoinForOwners(coin);
+    setShowOwnersModal(true);
+  };
+
   // Prevent right-click and other ways to save the image
   const preventSave = (e: React.MouseEvent) => {
     e.preventDefault();
     return false;
+  };
+
+  // Owners Modal Component
+  const OwnersModal: React.FC = () => {
+    if (!showOwnersModal || !selectedCoinForOwners) return null;
+
+    const owners = uniqueCoinOwners[selectedCoinForOwners['Coin Name']] || [];
+
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div className="bg-[#0d182a] rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-white">
+              {selectedCoinForOwners['Coin Name']} - Owners
+            </h2>
+            <button
+              onClick={() => setShowOwnersModal(false)}
+              className="text-gray-400 hover:text-white p-2"
+            >
+              <X size={24} />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-4 mb-6 p-4 bg-white/5 rounded-lg">
+            <div 
+              className="relative w-20 h-20"
+              onContextMenu={preventSave}
+            >
+              <img
+                src={selectedCoinForOwners['Coin Image']}
+                alt={selectedCoinForOwners['Coin Name']}
+                className="w-full h-full object-contain rounded-lg select-none"
+                draggable="false"
+                style={{
+                  WebkitUserSelect: 'none',
+                  userSelect: 'none',
+                  pointerEvents: 'none'
+                }}
+              />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">
+                {selectedCoinForOwners['Coin Name']}
+              </h3>
+              <p className="text-gray-400">
+                Owned by {owners.length} {owners.length === 1 ? 'collector' : 'collectors'}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-white mb-4">Collectors</h3>
+            {owners.map((owner) => (
+              <Link
+                key={`${owner.id}-${owner.Username}`}
+                to={`/collection/${owner.Username}/coin/${owner.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-white/5 rounded-lg p-4 hover:bg-white/10 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full overflow-hidden">
+                      <img
+                        src={owner['piture link'] || `https://api.dicebear.com/7.x/initials/svg?seed=${owner.Username}`}
+                        alt={owner.Username}
+                        className="w-full h-full object-cover"
+                        width="48"
+                        height="48"
+                        loading="lazy"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1">
+                      <UserBadges 
+                        isAdmin={owner.is_admin} 
+                        isFoundingMember={owner.is_founding_member}
+                        size={14}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-medium truncate">{owner.Username}</p>
+                    {owner.Status && (
+                      <p className="text-sm text-gray-400 truncate">{owner.Status}</p>
+                    )}
+                  </div>
+                  <div className="text-blue-400 text-sm">
+                    View Coin →
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -383,7 +537,7 @@ export const CoinForum: React.FC = () => {
 
           {searchTerm && (
             <div className="text-gray-400 text-sm">
-              Found {filteredCoins.length} {filteredCoins.length === 1 ? 'result' : 'results'} for "{searchTerm}"
+              Found {filteredCoins.length} unique {filteredCoins.length === 1 ? 'coin' : 'coins'} for "{searchTerm}"
             </div>
           )}
         </div>
@@ -394,16 +548,12 @@ export const CoinForum: React.FC = () => {
               {filteredCoins.map((coin) => (
                 <div
                   key={coin.id}
-                  className={`bg-white/5 backdrop-blur-sm rounded-lg overflow-hidden ${
+                  className={`bg-white/5 backdrop-blur-sm rounded-lg overflow-hidden cursor-pointer ${
                     coin.Featured ? 'ring-2 ring-yellow-500' : ''
                   }`}
+                  onClick={() => handleCoinClick(coin)}
                 >
-                  <Link
-                    to={`/collection/${coin.Username}/coin/${coin.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="relative group block"
-                  >
+                  <div className="relative group">
                     <NewCoinBadge dateAdded={coin.created_at} />
                     {loadingImages[coin.id] ? (
                       <div className="relative aspect-square flex items-center justify-center">
@@ -412,7 +562,7 @@ export const CoinForum: React.FC = () => {
                     ) : (
                       <div 
                         className="relative aspect-square"
-                        onContextMenu={preventSave} // Prevent right-click
+                        onContextMenu={preventSave}
                       >
                         <img
                           src={flippedCoins[coin.id] && coin.BacksideUrl ? coin.BacksideUrl : coin['Coin Image']}
@@ -446,6 +596,9 @@ export const CoinForum: React.FC = () => {
                         <p className="text-sm text-gray-300 mt-2">
                           {new Date(coin['Date Issued']).toLocaleDateString()}
                         </p>
+                        <p className="text-sm text-blue-400 mt-2">
+                          {uniqueCoinOwners[coin['Coin Name']]?.length || 1} {uniqueCoinOwners[coin['Coin Name']]?.length === 1 ? 'owner' : 'owners'}
+                        </p>
                         {coin.BacksideUrl && (
                           <button
                             onClick={(e) => {
@@ -459,49 +612,18 @@ export const CoinForum: React.FC = () => {
                             Flip Coin
                           </button>
                         )}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleCoinClick(coin);
+                          }}
+                          className="mt-4 flex items-center gap-2 mx-auto text-green-400 hover:text-green-300"
+                        >
+                          <Users size={16} />
+                          View Owners
+                        </button>
                       </div>
-                    </div>
-                  </Link>
-                  <div className="p-4 hover:bg-white/5 transition-colors">
-                    <div className="flex items-center justify-between gap-3">
-                      <Link
-                        to={`/collection/${coin.Username}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 flex-1 min-w-0"
-                      >
-                        <div className="relative">
-                          <div className="w-8 h-8 rounded-full overflow-hidden">
-                            <img
-                              src={coin.owner && coin.owner['piture link'] ? coin.owner['piture link'] : `https://api.dicebear.com/7.x/initials/svg?seed=${coin.owner ? coin.owner.Username : coin.Username}`}
-                              alt={coin.owner ? coin.owner.Username : coin.Username}
-                              className="w-full h-full object-cover"
-                              width="32"
-                              height="32"
-                              loading="lazy"
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                          </div>
-                          <div className="absolute -bottom-1 -right-1">
-                            <UserBadges 
-                              isAdmin={coin.owner ? coin.owner.is_admin : false} 
-                              isFoundingMember={coin.owner ? coin.owner.is_founding_member : false}
-                              size={12}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-medium truncate">{coin.owner ? coin.owner.Username : coin.Username}</p>
-                          {coin.owner && coin.owner.Status && (
-                            <p className="text-sm text-gray-400 truncate">{coin.owner.Status}</p>
-                          )}
-                        </div>
-                      </Link>
-                      <AdminActions 
-                        coinId={coin.id} 
-                        userEmail={coin.UserId}
-                        onSuccess={fetchCoins}
-                      />
                     </div>
                   </div>
                 </div>
@@ -510,7 +632,7 @@ export const CoinForum: React.FC = () => {
               {filteredCoins.length === 0 && (
                 <div className="col-span-full flex flex-col items-center justify-center text-center text-gray-400 py-12">
                   <Search className="h-12 w-12 mb-4 opacity-50" />
-                  <p className="text-lg">No coins found matching your search.</p>
+                  <p className="text-lg">No unique coins found matching your search.</p>
                   <p className="text-sm mt-2">Try adjusting your search terms.</p>
                 </div>
               )}
@@ -560,7 +682,7 @@ export const CoinForum: React.FC = () => {
                         )}
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-blue-400">{collector.coinCount} coins</p>
+                        <p className="text-sm text-blue-400">{collector.coinCount} unique coins</p>
                       </div>
                     </div>
                   </Link>
@@ -576,6 +698,9 @@ export const CoinForum: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Owners Modal */}
+      <OwnersModal />
     </div>
   );
 };
