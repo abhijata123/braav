@@ -188,8 +188,8 @@ export const Signup: React.FC = () => {
 
         profileImageUrl = urlData.publicUrl;
       } else {
-        // Use a challenge coin themed placeholder image
-        profileImageUrl = 'https://images.unsplash.com/photo-1614338577197-5812cb856df7?w=400&h=400&fit=crop';
+        // Use the new default profile picture
+        profileImageUrl = 'https://credhwdecybwcrkmhtrn.supabase.co/storage/v1/object/public/User%20Images//roman-manshin-ktWVTQ6PhN4-unsplash.jpg';
       }
 
       // Use default password for all users
