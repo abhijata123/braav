@@ -228,6 +228,9 @@ export const Collection: React.FC = () => {
   const handleDragEnd = async (result: any) => {
     if (!result.destination || !user) return;
 
+    // Save current state before making changes
+    const previousCoins = [...coins];
+    
     setIsReordering(true);
     const items = Array.from(coins);
     const [reorderedItem] = items.splice(result.source.index, 1);
@@ -260,32 +263,11 @@ export const Collection: React.FC = () => {
       toast.success('Coin order updated successfully');
     } catch (error) {
       console.error('Error updating coin order:', error);
-      fetchCoins(profile?.Username || ''); // Revert to original order if update fails
+      // Revert to previous state instead of refetching
+      setCoins(previousCoins);
       toast.error('Failed to update coin order');
     } finally {
       setIsReordering(false);
-    }
-  };
-
-  const fetchCoins = async (username: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('Challenge Coin Table')
-        .select('*, created_at, "Has Copyright"')
-        .eq('Username', username)
-        .order('Priority', { ascending: true });
-
-      if (error) throw error;
-
-      const coinsWithPriority = (data || []).map((coin, index) => ({
-        ...coin,
-        Priority: coin.Priority ?? index + 1
-      }));
-
-      setCoins(coinsWithPriority);
-    } catch (error) {
-      console.error('Error fetching coins:', error);
-      toast.error('Failed to load coins');
     }
   };
 
@@ -606,7 +588,8 @@ export const Collection: React.FC = () => {
         
         {!hasMore && coins.length > 0 && (
           <div className="text-center text-gray-400 mt-8">
-            <p>All coins loaded ({coins.length} total)</p>
+            <p>✨ All coins loaded ({coins.length} total)</p>
+            <p className="text-sm mt-1">You've reached the end of your collection!</p>
           </div>
         )}
       </div>
