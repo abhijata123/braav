@@ -1,15 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wand2, Loader2, Save, ArrowLeft, Info, Hash, Upload, RotateCw, Copyright } from 'lucide-react';
-import OpenAI from 'openai';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
-
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
-});
 
 export const CreateCoin = () => {
   const navigate = useNavigate();
@@ -104,50 +98,33 @@ export const CreateCoin = () => {
 
     setGenerating(side);
     try {
-      const enhancedPrompt = `Create a professional military challenge coin ${side} side design with the following specifications:
-1. Text Content: "${prompt}"
-2. Design Requirements:
-   - Circular shape with a diameter of 2 inches
-   - Professional military-style layout
-   - High contrast for text legibility
-   - Clean, sans-serif font for maximum readability
-   - Text size appropriate for physical coin production
-3. Style Guidelines:
-   - Center-aligned composition
-   - Metallic finish with subtle gradients
-   - Professional emblems and insignias where appropriate
-   - Text properly spaced and arranged in a hierarchical manner
-4. Quality Requirements:
-   - Sharp, crisp text rendering
-   - No blurry or distorted elements
-   - Professional-grade detailing
-   - Balanced negative space
-5. Technical Specifications:
-   - High resolution output
-   - Clear distinction between text and background
-   - Proper contrast ratios for text visibility
-6. Text Placement:
-   - Main text should be large and centered
-   - Secondary text curved along the coin's edge
-   - All text must be perfectly readable
-   - No overlapping or distorted text`;
-
-      const response = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: enhancedPrompt,
-        n: 1,
-        size: "1024x1024",
-        quality: "hd",
-        style: "vivid",
-        response_format: "b64_json"
+      // Call the Supabase Edge Function instead of OpenAI directly
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          prompt,
+          side
+        })
       });
-
-      const base64Image = response.data[0].b64_json;
-      if (!base64Image) {
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate image');
+      }
+      
+      const result = await response.json();
+      
+      if (!result.success || !result.data) {
         throw new Error('No image data received');
       }
-
-      const imageUrl = `data:image/png;base64,${base64Image}`;
+      
+      const imageUrl = `data:image/png;base64,${result.data}`;
       setProcessing(side);
       
       const processedImage = await processImage(imageUrl);
