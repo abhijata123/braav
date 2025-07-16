@@ -6,73 +6,79 @@ import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { Logo } from '../components/Logo';
 
-// Email normalization utility function
 const normalizeEmail = (email: string): string => {
   return email.toLowerCase().trim();
-};
-
-// Check if running in PWA mode
-const isPWA = (): boolean => {
-  return window.matchMedia('(display-mode: standalone)').matches ||
-         (window.navigator as any).standalone ||
-         document.referrer.includes('android-app://');
 };
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-  const [magicLinkSent, setMagicLinkSent] = useState(false);
   const { user } = useAuthStore();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Normalize the email before processing
       const normalizedEmail = normalizeEmail(email);
 
-      // Check if user exists in User Dps table (using normalized email)
       const { data: userData, error: userError } = await supabase
         .from('User Dps')
         .select('email')
         .eq('email', normalizedEmail)
         .single();
 
-      // If user doesn't exist, redirect to signup
       if (!userData || userError) {
         toast.error('Please sign up first to create an account');
-        navigate('/signup', { 
-          state: { 
+        navigate('/signup', {
+          state: {
             email: normalizedEmail,
             message: 'Please create an account before attempting to log in'
-          } 
+          }
         });
         setLoading(false);
         return;
       }
 
-      // Determine redirect URL based on PWA status
-      const redirectUrl = isPWA() 
-        ? `https://coins.braav.co?pwa=true`
-        : `https://coins.braav.co`;
-
-      // If user exists, proceed with magic link login (using normalized email)
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email: normalizedEmail,
-        options: {
-          emailRedirectTo: redirectUrl
-        }
       });
 
       if (signInError) throw signInError;
 
-      setMagicLinkSent(true);
-      toast.success('Check your email for the login link!');
+      setOtpSent(true);
+      toast.success('OTP sent to your email!');
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error('Failed to send login link');
+      console.error('OTP send error:', error);
+      toast.error('Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const normalizedEmail = normalizeEmail(email);
+
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: normalizedEmail,
+        token: otp,
+        type: 'email',
+      });
+
+      if (error) throw error;
+
+      toast.success('Successfully logged in!');
+      navigate('/');
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      toast.error('Invalid OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -92,32 +98,9 @@ export const Login: React.FC = () => {
           <p className="mt-2 text-sm text-gray-400">Sign in to manage your collection</p>
         </div>
 
-        {magicLinkSent ? (
-          <div className="text-center space-y-4">
-            <div className="bg-blue-500/10 text-blue-500 p-4 rounded-lg">
-              <h2 className="text-lg font-medium mb-2">Check your email</h2>
-              <p className="text-sm">
-                We've sent a magic link to <strong>{normalizeEmail(email)}</strong>
-              </p>
-              <p className="text-sm mt-2">
-                Click the link in the email to sign in to your account.
-              </p>
-              {isPWA() && (
-                <p className="text-sm mt-2 text-yellow-400">
-                  💡 The link will open in your browser, then redirect back to your app.
-                </p>
-              )}
-            </div>
-            <button
-              onClick={() => setMagicLinkSent(false)}
-              className="text-blue-500 hover:text-blue-400 text-sm"
-            >
-              Use a different email
-            </button>
-          </div>
-        ) : (
+        {!otpSent ? (
           <>
-            <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+            <form className="mt-8 space-y-6" onSubmit={handleSendOtp}>
               <div>
                 <label htmlFor="email" className="sr-only">
                   Email address
@@ -143,7 +126,7 @@ export const Login: React.FC = () => {
                   {loading ? (
                     <Loader2 className="animate-spin h-5 w-5" />
                   ) : (
-                    'Send Magic Link'
+                    'Send OTP'
                   )}
                 </button>
               </div>
@@ -158,6 +141,54 @@ export const Login: React.FC = () => {
               </p>
             </div>
           </>
+        ) : (
+          <form className="mt-8 space-y-6" onSubmit={handleVerifyOtp}>
+            <div className="text-center text-sm text-gray-400">
+              We’ve sent a 6-digit code to <strong>{normalizeEmail(email)}</strong>
+            </div>
+
+            <div>
+              <label htmlFor="otp" className="sr-only">
+                OTP Code
+              </label>
+              <input
+                id="otp"
+                name="otp"
+                type="text"
+                required
+                maxLength={6}
+                pattern="\d{6}"
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-700 bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:z-10 sm:text-sm tracking-widest text-center"
+                placeholder="Enter OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                {loading ? (
+                  <Loader2 className="animate-spin h-5 w-5" />
+                ) : (
+                  'Verify OTP & Login'
+                )}
+              </button>
+            </div>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setOtpSent(false)}
+                className="text-blue-500 hover:text-blue-400 text-sm mt-2"
+              >
+                Use a different email
+              </button>
+            </div>
+          </form>
         )}
       </div>
     </div>
