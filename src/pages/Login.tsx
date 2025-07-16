@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -24,47 +24,6 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const { user } = useAuthStore();
-
-  // Debug PWA detection
-  useEffect(() => {
-    console.log('=== PWA Detection Debug ===');
-    console.log('display-mode standalone:', window.matchMedia('(display-mode: standalone)').matches);
-    console.log('navigator.standalone:', (window.navigator as any).standalone);
-    console.log('document.referrer:', document.referrer);
-    console.log('isPWA() result:', isPWA());
-    console.log('Current origin:', window.location.origin);
-  }, []);
-
-  // Handle PWA redirect from magic link
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const isPWARedirect = urlParams.get('pwa');
-    
-    console.log('Current URL:', window.location.href);
-    console.log('PWA redirect detected:', isPWARedirect);
-    console.log('Is PWA mode:', window.matchMedia('(display-mode: standalone)').matches);
-    
-    if (isPWARedirect) {
-      console.log('Should redirect to PWA now...');
-      
-      // Handle the auth session
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          console.log('Successfully authenticated in PWA');
-          toast.success('Successfully logged in!');
-          
-          // Clean up the URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-          
-          // If we're not in PWA mode, try to redirect to PWA
-          if (!window.matchMedia('(display-mode: standalone)').matches) {
-            // Show message to user to open PWA
-            toast.success('Please open your installed app for the best experience');
-          }
-        }
-      });
-    }
-  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,9 +54,9 @@ export const Login: React.FC = () => {
       }
 
       // Determine redirect URL based on PWA status
-      const redirectUrl = `https://coins.braav.co?pwa=true`;
-
-      console.log('Sending magic link with redirect URL:', redirectUrl);
+      const redirectUrl = isPWA() 
+        ? `https://coins.braav.co?pwa=true`
+        : `https://coins.braav.co`;
 
       // If user exists, proceed with magic link login (using normalized email)
       const { error: signInError } = await supabase.auth.signInWithOtp({
