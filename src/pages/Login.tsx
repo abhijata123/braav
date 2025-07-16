@@ -75,6 +75,22 @@ export const Login: React.FC = () => {
       if (error) throw error;
 
       toast.success('Successfully logged in!');
+
+      // 🔔 Send push notification to all users via Webpushr
+      await fetch('https://api.webpushr.com/v1/notification/send/all', {
+        method: 'POST',
+        headers: {
+          'webpushrKey': 'db8dc32f5368d285cd28058b80ccd43a',
+          'webpushrAuthToken': '111505',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: 'Welcome back!',
+          message: 'Glad to see you again on Braav Coins.',
+          target_url: 'https://coins.braav.co'
+        })
+      });
+
       navigate('/');
     } catch (error) {
       console.error('OTP verification error:', error);
