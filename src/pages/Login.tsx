@@ -11,6 +11,13 @@ const normalizeEmail = (email: string): string => {
   return email.toLowerCase().trim();
 };
 
+// Check if running in PWA mode
+const isPWA = (): boolean => {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         (window.navigator as any).standalone ||
+         document.referrer.includes('android-app://');
+};
+
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -46,11 +53,16 @@ export const Login: React.FC = () => {
         return;
       }
 
+      // Determine redirect URL based on PWA status
+      const redirectUrl = isPWA() 
+        ? `https://coins.braav.co?pwa=true`
+        : `https://coins.braav.co`;
+
       // If user exists, proceed with magic link login (using normalized email)
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email: normalizedEmail,
         options: {
-          emailRedirectTo: window.location.origin
+          emailRedirectTo: redirectUrl
         }
       });
 
@@ -90,6 +102,11 @@ export const Login: React.FC = () => {
               <p className="text-sm mt-2">
                 Click the link in the email to sign in to your account.
               </p>
+              {isPWA() && (
+                <p className="text-sm mt-2 text-yellow-400">
+                  💡 The link will open in your browser, then redirect back to your app.
+                </p>
+              )}
             </div>
             <button
               onClick={() => setMagicLinkSent(false)}
