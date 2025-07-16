@@ -95,9 +95,7 @@ export const Login: React.FC = () => {
       }
 
       // Determine redirect URL based on PWA status
-      const redirectUrl = isPWA() 
-        ? `https://coins.braav.co?pwa=true`
-        : `https://coins.braav.co`;
+      const redirectUrl = `https://coins.braav.co?pwa=true`;
 
       console.log('Sending magic link with redirect URL:', redirectUrl);
 
