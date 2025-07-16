@@ -22,6 +22,93 @@ import { Events } from './pages/Events';
 import { useThemeStore } from './store/themeStore';
 import { useAuthStore } from './store/authStore';
 import { useAdminStore } from './store/adminStore';
+import { supabase } from './lib/supabase';
+
+// PWA Redirect Handler Hook
+const usePWARedirectHandler = () => {
+  useEffect(() => {
+    const handlePWARedirect = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isPWARedirect = urlParams.get('pwa');
+      
+      console.log('=== PWA Redirect Handler Debug ===');
+      console.log('Current URL:', window.location.href);
+      console.log('PWA redirect detected:', isPWARedirect);
+      console.log('Is running in PWA mode:', window.matchMedia('(display-mode: standalone)').matches);
+      
+      if (isPWARedirect === 'true') {
+        console.log('PWA redirect detected, processing...');
+        
+        // Handle Supabase auth session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (session) {
+          console.log('Session found, user authenticated');
+          
+          // Clean up the URL (remove ?pwa=true)
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+          
+          // Try multiple methods to redirect to PWA
+          console.log('Attempting to redirect to PWA...');
+          
+          // Method 1: Try to open PWA directly
+          try {
+            // For Android Chrome
+            if (navigator.userAgent.includes('Android')) {
+              window.location.href = 'intent://coins.braav.co/#Intent;scheme=https;package=com.android.chrome;end';
+              return;
+            }
+            
+            // For iOS Safari
+            if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
+              window.location.href = 'https://coins.braav.co';
+              return;
+            }
+            
+            // Generic fallback
+            window.location.href = 'https://coins.braav.co';
+            
+          } catch (error) {
+            console.error('Failed to redirect to PWA:', error);
+            
+            // Fallback: Show message to user
+            document.body.innerHTML = `
+              <div style="
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                text-align: center;
+                padding: 20px;
+                font-family: Arial, sans-serif;
+                background-color: #f5f5f5;
+              ">
+                <h2 style="color: #333; margin-bottom: 20px;">✅ Login Successful!</h2>
+                <p style="color: #666; margin-bottom: 30px;">Please open your installed <strong>Coins</strong> app to continue.</p>
+                <button onclick="window.location.href='https://coins.braav.co'" style="
+                  background-color: #007bff;
+                  color: white;
+                  border: none;
+                  padding: 12px 24px;
+                  border-radius: 6px;
+                  font-size: 16px;
+                  cursor: pointer;
+                ">Open App</button>
+              </div>
+            `;
+          }
+        } else {
+          console.log('No session found, auth may have failed');
+        }
+      }
+    };
+    
+    // Run the handler
+    handlePWARedirect();
+  }, []);
+};
 
 // Protected Route wrapper component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -56,6 +143,9 @@ function App() {
   const { user } = useAuthStore();
   const { checkAdminStatus } = useAdminStore();
   const { initializeTheme } = useThemeStore();
+
+  // Add PWA redirect handler
+  usePWARedirectHandler();
 
   useEffect(() => {
     if (user) {
