@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Rotate3D, User, Search, X, Users } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useThemeStore } from '../store/themeStore';
 import { getBackgroundImage } from '../utils/theme';
@@ -52,11 +53,7 @@ interface CoinOwner {
 export const CoinForum: React.FC = () => {
   const { user } = useAuthStore();
   const { theme, initializeTheme } = useThemeStore();
-  const [coins, setCoins] = useState<Coin[]>([]);
-  const [uniqueCoins, setUniqueCoins] = useState<Coin[]>([]);
-  const [uniqueCoinOwners, setUniqueCoinOwners] = useState<Record<string, CoinOwner[]>>({});
   const [filteredCoins, setFilteredCoins] = useState<Coin[]>([]);
-  const [loading, setLoading] = useState(true);
   const [flippedCoins, setFlippedCoins] = useState<Record<number, boolean>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -64,6 +61,7 @@ export const CoinForum: React.FC = () => {
   const [uniqueUsers, setUniqueUsers] = useState<{ Username: string; 'piture link': string | null; Status: string | null; coinCount: number; is_admin: boolean; is_founding_member: boolean }[]>([]);
   const [showOwnersModal, setShowOwnersModal] = useState(false);
   const [selectedCoinForOwners, setSelectedCoinForOwners] = useState<Coin | null>(null);
+  const [uniqueCoinOwners, setUniqueCoinOwners] = useState<Record<string, CoinOwner[]>>({});
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [isCometChatInitialized, setIsCometChatInitialized] = useState(false);
   const [loadingImages, setLoadingImages] = useState<Record<number, boolean>>({});
@@ -73,12 +71,115 @@ export const CoinForum: React.FC = () => {
     message: string;
   } | null>(null);
 
+  // Fetch coins function for TanStack Query
+  const fetchCoinsData = async (): Promise<{ coins: Coin[]; uniqueCoins: Coin[]; uniqueCoinOwners: Record<string, CoinOwner[]> }> => {
+    const { data: coinData, error: coinError } = await supabase
+      .from('Challenge Coin Table')
+      .select(`
+        id,
+        "Coin Name",
+        "Coin Image",
+        "BacksideUrl",
+        "Date Issued",
+        Featured,
+        Username,
+        "Mode Of Acquiring",
+        UserId,
+        created_at,
+        "Has Copyright"
+      `)
+      .eq('Public Display', true)
+      .order('created_at', { ascending: false });
+
+    if (coinError) throw coinError;
+
+    if (!coinData || coinData.length === 0) {
+      return { coins: [], uniqueCoins: [], uniqueCoinOwners: {} };
+    }
+
+    const usernames = [...new Set(coinData.map(coin => coin.Username))];
+
+    const { data: userData, error: userError } = await supabase
+      .from('User Dps')
+      .select('Username, "piture link", Status, is_admin, is_founding_member, email')
+      .in('Username', usernames);
+
+    if (userError) throw userError;
+
+    const userMap = new Map(userData?.map(user => [user.Username, user]) || []);
+
+    const coinsWithOwner = coinData.map(coin => ({
+      ...coin,
+      owner: userMap.get(coin.Username) || {
+        Username: coin.Username,
+        'piture link': null,
+        Status: null,
+        is_admin: false,
+        is_founding_member: false
+      }
+    }));
+
+    // Process unique coins and their owners
+    const coinsByName = new Map<string, { coin: Coin; owners: CoinOwner[] }>();
+    
+    coinsWithOwner.forEach(coin => {
+      const coinName = coin['Coin Name'];
+      const owner: CoinOwner = {
+        id: coin.id,
+        Username: coin.Username,
+        'piture link': coin.owner['piture link'],
+        Status: coin.owner.Status,
+        is_admin: coin.owner.is_admin,
+        is_founding_member: coin.owner.is_founding_member,
+        email: coin.UserId
+      };
+
+      if (coinsByName.has(coinName)) {
+        coinsByName.get(coinName)!.owners.push(owner);
+      } else {
+        coinsByName.set(coinName, {
+          coin: coin,
+          owners: [owner]
+        });
+      }
+    });
+
+    const uniqueCoinsArray: Coin[] = [];
+    const ownersMap: Record<string, CoinOwner[]> = {};
+
+    coinsByName.forEach(({ coin, owners }, coinName) => {
+      uniqueCoinsArray.push(coin);
+      ownersMap[coinName] = owners;
+    });
+
+    return { coins: coinsWithOwner, uniqueCoins: uniqueCoinsArray, uniqueCoinOwners: ownersMap };
+  };
+
+  // Use TanStack Query to fetch and cache coins data
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['publicCoins'],
+    queryFn: fetchCoinsData,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  const coins = data?.coins || [];
+  const uniqueCoins = data?.uniqueCoins || [];
+  const loading = isLoading;
+
   // Initialize theme for the current user
   useEffect(() => {
     if (user) {
       initializeTheme();
     }
   }, [user]);
+
+  // Update uniqueCoinOwners when data changes
+  useEffect(() => {
+    if (data?.uniqueCoinOwners) {
+      setUniqueCoinOwners(data.uniqueCoinOwners);
+    }
+  }, [data]);
 
   useEffect(() => {
     if (user && !isCometChatInitialized) {
@@ -171,10 +272,6 @@ export const CoinForum: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchCoins();
-  }, []);
-
-  useEffect(() => {
     if (uniqueCoins.length > 0 && searchTerm.trim().length > 0) {
       const uniqueNames = [...new Set(uniqueCoins
         .map(coin => coin['Coin Name'])
@@ -243,103 +340,6 @@ export const CoinForum: React.FC = () => {
     };
   };
 
-  const fetchCoins = async () => {
-    try {
-      const { data: coinData, error: coinError } = await supabase
-        .from('Challenge Coin Table')
-        .select('*, created_at, "Has Copyright"')
-        .eq('Public Display', true)
-        .order('created_at', { ascending: false });
-
-      if (coinError) throw coinError;
-
-      if (!coinData || coinData.length === 0) {
-        setCoins([]);
-        setUniqueCoins([]);
-        setFilteredCoins([]);
-        setLoading(false);
-        return;
-      }
-
-      const usernames = [...new Set(coinData.map(coin => coin.Username))];
-
-      const { data: userData, error: userError } = await supabase
-        .from('User Dps')
-        .select('Username, "piture link", Status, is_admin, is_founding_member, email')
-        .in('Username', usernames);
-
-      if (userError) throw userError;
-
-      const userMap = new Map(userData?.map(user => [user.Username, user]) || []);
-
-      const coinsWithOwner = coinData.map(coin => ({
-        ...coin,
-        owner: userMap.get(coin.Username) || {
-          Username: coin.Username,
-          'piture link': null,
-          Status: null,
-          is_admin: false,
-          is_founding_member: false
-        }
-      }));
-
-      setCoins(coinsWithOwner);
-
-      // Process unique coins and their owners
-      const coinsByName = new Map<string, { coin: Coin; owners: CoinOwner[] }>();
-      
-      coinsWithOwner.forEach(coin => {
-        const coinName = coin['Coin Name'];
-        const owner: CoinOwner = {
-          id: coin.id,
-          Username: coin.Username,
-          'piture link': coin.owner['piture link'],
-          Status: coin.owner.Status,
-          is_admin: coin.owner.is_admin,
-          is_founding_member: coin.owner.is_founding_member,
-          email: coin.UserId
-        };
-
-        if (coinsByName.has(coinName)) {
-          coinsByName.get(coinName)!.owners.push(owner);
-        } else {
-          coinsByName.set(coinName, {
-            coin: coin,
-            owners: [owner]
-          });
-        }
-      });
-
-      const uniqueCoinsArray: Coin[] = [];
-      const ownersMap: Record<string, CoinOwner[]> = {};
-
-      coinsByName.forEach(({ coin, owners }, coinName) => {
-        uniqueCoinsArray.push(coin);
-        ownersMap[coinName] = owners;
-      });
-
-      setUniqueCoins(uniqueCoinsArray);
-      setUniqueCoinOwners(ownersMap);
-      setFilteredCoins(uniqueCoinsArray);
-      
-      // Initialize loading state for each unique coin
-      const newLoadingState: Record<number, boolean> = {};
-      uniqueCoinsArray.forEach(coin => {
-        newLoadingState[coin.id] = true;
-        preloadImage(coin['Coin Image'], coin.id);
-        if (coin.BacksideUrl) {
-          preloadImage(coin.BacksideUrl, coin.id, false);
-        }
-      });
-      setLoadingImages(newLoadingState);
-    } catch (error) {
-      console.error('Error fetching coins:', error);
-      toast.error('Failed to load coins');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -368,6 +368,23 @@ export const CoinForum: React.FC = () => {
     e.preventDefault();
     return false;
   };
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#0d182a] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-white mb-4">Failed to load coins</div>
+          <button
+            onClick={() => refetch()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Owners Modal Component
   const OwnersModal: React.FC = () => {
@@ -444,7 +461,7 @@ export const CoinForum: React.FC = () => {
                       <UserBadges 
                         isAdmin={owner.is_admin} 
                         isFoundingMember={owner.is_founding_member}
-                        size={14}
+                        onSuccess={() => refetch()}
                       />
                     </div>
                   </div>
