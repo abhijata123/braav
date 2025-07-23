@@ -136,10 +136,19 @@ export const VettingPage: React.FC = () => {
               Submit your account for verification to unlock exclusive features and join our trusted community of challenge coin collectors. 
               Our verification process helps maintain the quality and authenticity of our platform.
             </p>
+            <h2 className="text-3xl font-bold text-white mb-4">Unlock Secure Crypto Transactions</h2>
+            <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+              Submit your account for verification to enable safe and secure crypto transactions directly on this platform. 
+              Our verification process ensures a trusted environment for all your digital asset activities.
+            </p>
             
             <div className="bg-white/5 rounded-lg p-6 mb-8 max-w-md mx-auto">
               <h3 className="text-lg font-semibold text-white mb-4">What you'll get:</h3>
               <ul className="text-left text-gray-300 space-y-2">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+                  <span>Secure Crypto Transaction Capabilities</span>
+                </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
                   <span>Verified badge on your profile</span>
@@ -151,10 +160,6 @@ export const VettingPage: React.FC = () => {
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
                   <span>Priority support</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                  <span>Enhanced trading privileges</span>
                 </li>
               </ul>
             </div>
