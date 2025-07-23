@@ -13,7 +13,8 @@ export function Layout() {
   const { user, loading } = useAuthStore();
   const { isAdmin } = useAdminStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isExploreDropdownOpen, setIsExploreDropdownOpen] = useState(false);
+  const [isVettingDropdownOpen, setIsVettingDropdownOpen] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [hasUnread, setHasUnread] = useState(false);
   const [isCometChatInitialized, setIsCometChatInitialized] = useState(false);
@@ -29,7 +30,8 @@ export function Layout() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
+        setIsExploreDropdownOpen(false);
+        setIsVettingDropdownOpen(false);
       }
     };
 
@@ -229,11 +231,9 @@ export function Layout() {
   const navigationItems = [
     { to: "/my-collection", icon: <Coins className="h-4 w-4 mr-1" />, label: "My Collection" },
     { to: "/profile", icon: <User className="h-4 w-4 mr-1" />, label: "My Profile" },
-    { to: "/vetting", icon: <Shield className="h-4 w-4 mr-1" />, label: "Verification" },
     ...(isAdmin ? [{ to: "/create", icon: <Wand2 className="h-4 w-4 mr-1" />, label: "Create A Coin" }] : []),
     { to: "/upload", icon: <Upload className="h-4 w-4 mr-1" />, label: "Upload Coin" },
     { to: "/send", icon: <Send className="h-4 w-4 mr-1" />, label: "Send Coins" },
-    ...(isVettingAdmin ? [{ to: "/admin/vetting", icon: <UserCheck className="h-4 w-4 mr-1" />, label: "Vetting Admin" }] : []),
   ];
 
   const exploreItems = [
@@ -301,14 +301,17 @@ export function Layout() {
 
                   <div className="relative" ref={dropdownRef}>
                     <button
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      onClick={() => {
+                        setIsExploreDropdownOpen(!isExploreDropdownOpen);
+                        setIsVettingDropdownOpen(false);
+                      }}
                       className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center gap-1"
                     >
                       Explore
                       <ChevronDown className="h-4 w-4" />
                     </button>
 
-                    {isDropdownOpen && (
+                    {isExploreDropdownOpen && (
                       <div className="absolute right-0 mt-2 w-48 bg-gray-900/95 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
                         {exploreItems.map((item) => (
                           <Link
@@ -323,6 +326,50 @@ export function Layout() {
                       </div>
                     )}
                   </div>
+
+                  {isVettingAdmin && (
+                    <div className="relative">
+                      <button
+                        onClick={() => {
+                          setIsVettingDropdownOpen(!isVettingDropdownOpen);
+                          setIsExploreDropdownOpen(false);
+                        }}
+                        className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center gap-1"
+                      >
+                        Vetting Tools
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+
+                      {isVettingDropdownOpen && (
+                        <div className="absolute right-0 mt-2 w-48 bg-gray-900/95 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                          <Link
+                            to="/vetting"
+                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 flex items-center gap-2"
+                          >
+                            <Shield className="h-4 w-4" />
+                            Verification
+                          </Link>
+                          <Link
+                            to="/admin/vetting"
+                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 flex items-center gap-2"
+                          >
+                            <UserCheck className="h-4 w-4" />
+                            Vetting Admin
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {!isVettingAdmin && (
+                    <Link
+                      to="/vetting"
+                      className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center"
+                    >
+                      <Shield className="h-4 w-4 mr-1" />
+                      Verification
+                    </Link>
+                  )}
 
                   {username && (
                     <Link
@@ -430,17 +477,45 @@ export function Layout() {
                   </Link>
                 ))}
 
-                {isVettingAdmin && (
+                {!isVettingAdmin && (
                   <Link
-                    to="/admin/vetting"
+                    to="/vetting"
                     className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <div className="flex items-center gap-2">
-                      <UserCheck className="h-4 w-4" />
-                      Vetting Admin
+                      <Shield className="h-4 w-4" />
+                      Verification
                     </div>
                   </Link>
+                )}
+
+                {isVettingAdmin && (
+                  <>
+                    <div className="px-3 py-2 text-gray-400 text-sm font-medium">
+                      Vetting Tools
+                    </div>
+                    <Link
+                      to="/vetting"
+                      className="text-gray-300 hover:text-white block px-6 py-2 rounded-md text-base font-medium"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Verification
+                      </div>
+                    </Link>
+                    <Link
+                      to="/admin/vetting"
+                      className="text-gray-300 hover:text-white block px-6 py-2 rounded-md text-base font-medium"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <UserCheck className="h-4 w-4" />
+                        Vetting Admin
+                      </div>
+                    </Link>
+                  </>
                 )}
 
                 {username && (
