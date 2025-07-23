@@ -336,7 +336,7 @@ export function Layout() {
                     </Link>
                   )}
 
-                  <div className="flex items-center space-x-3 ml-4">
+                  <div className="flex items-center space-x-3">
                     <Link
                       to="/notifications"
                       className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center"
@@ -378,7 +378,7 @@ export function Layout() {
                   </div>
                 </>
               ) : (
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-6">
                   <Link
                     to="/login"
                     className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
