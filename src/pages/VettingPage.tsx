@@ -228,10 +228,10 @@ export const VettingPage: React.FC = () => {
               </div>
             </div>
             
-            <h2 className="text-3xl font-bold text-white mb-4">🎉 Account Verified!</h2>
+            <h2 className="text-3xl font-bold text-white mb-4">🎉 Crypto Transactions Enabled!</h2>
             <p className="text-gray-300 mb-6">
               Congratulations! Your account has been successfully verified and approved.
-              You now have full access to all exclusive features and benefits.
+              You can now perform secure crypto transactions, mint NFTs, and access all blockchain features on our platform.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -248,9 +248,9 @@ export const VettingPage: React.FC = () => {
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-blue-400 mb-2">
                   <UserCheck className="h-5 w-5" />
-                  <span className="font-semibold">Status</span>
+                  <span className="font-semibold">Crypto Status</span>
                 </div>
-                <p className="text-white">Verified Member</p>
+                <p className="text-white">Crypto Transactions Enabled</p>
               </div>
             </div>
 
@@ -258,7 +258,7 @@ export const VettingPage: React.FC = () => {
               <div className="bg-white/10 rounded-lg p-6 text-left mb-8 max-w-2xl mx-auto">
                 <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
                   <UserCheck className="h-6 w-6 text-green-400" />
-                  Your Verification Details
+                  Your Crypto Verification Details
                 </h3>
                 <div className="bg-gray-800/50 rounded-md p-4 overflow-auto">
                   <pre className="text-gray-200 text-sm whitespace-pre-wrap">
@@ -266,7 +266,7 @@ export const VettingPage: React.FC = () => {
                   </pre>
                 </div>
                 <p className="text-gray-400 text-xs mt-3">
-                  This data was provided upon your account's verification.
+                  This data was provided upon your crypto verification approval.
                 </p>
               </div>
             )}
