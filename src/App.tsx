@@ -19,6 +19,7 @@ import { Notifications } from './pages/Notifications';
 import { Posts } from './pages/Posts';
 import { CreateCoin } from './pages/CreateCoin';
 import { Events } from './pages/Events';
+import { VettingPage } from './pages/VettingPage';
 import { useThemeStore } from './store/themeStore';
 import { useAuthStore } from './store/authStore';
 import { useAdminStore } from './store/adminStore';
@@ -169,6 +170,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Events />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vetting"
+            element={
+              <ProtectedRoute>
+                <VettingPage />
               </ProtectedRoute>
             }
           />
