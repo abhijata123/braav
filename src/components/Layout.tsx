@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, Outlet } from 'react-router-dom';
-import { LogOut, User, Menu, X, Globe, Trophy, Send, Search, MessageSquare, ChevronDown, Bell, MessageCircle, Coins, Wand2, Upload, Calendar, Shield } from 'lucide-react';
+import { LogOut, User, Menu, X, Globe, Trophy, Send, Search, MessageSquare, ChevronDown, Bell, MessageCircle, Coins, Wand2, Upload, Calendar, Shield, UserCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { Logo } from './Logo';
@@ -18,6 +18,7 @@ export function Layout() {
   const [hasUnread, setHasUnread] = useState(false);
   const [isCometChatInitialized, setIsCometChatInitialized] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [isVettingAdmin, setIsVettingAdmin] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationSoundRef = useRef<HTMLAudioElement>(null);
   const [notification, setNotification] = useState<{
@@ -133,6 +134,7 @@ export function Layout() {
       fetchUsername();
       checkUnreadNotifications();
       subscribeToNotifications();
+      checkVettingAdminStatus();
     }
   }, [user]);
 
@@ -166,6 +168,18 @@ export function Layout() {
     } catch (error) {
       console.error('Error checking notifications:', error);
     }
+  };
+
+  const checkVettingAdminStatus = () => {
+    if (!user?.email) return;
+    
+    const vettingAdmins = [
+      'anna+test@braav.co',
+      'abhijatasen18+charlotte@gmail.com',
+      'ashleyblewis@gmail.com'
+    ];
+    
+    setIsVettingAdmin(vettingAdmins.includes(user.email));
   };
 
   const subscribeToNotifications = () => {
@@ -219,6 +233,7 @@ export function Layout() {
     ...(isAdmin ? [{ to: "/create", icon: <Wand2 className="h-4 w-4 mr-1" />, label: "Create A Coin" }] : []),
     { to: "/upload", icon: <Upload className="h-4 w-4 mr-1" />, label: "Upload Coin" },
     { to: "/send", icon: <Send className="h-4 w-4 mr-1" />, label: "Send Coins" },
+    ...(isVettingAdmin ? [{ to: "/admin/vetting", icon: <UserCheck className="h-4 w-4 mr-1" />, label: "Vetting Admin" }] : []),
   ];
 
   const exploreItems = [
@@ -414,6 +429,19 @@ export function Layout() {
                     </div>
                   </Link>
                 ))}
+
+                {isVettingAdmin && (
+                  <Link
+                    to="/admin/vetting"
+                    className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-4 w-4" />
+                      Vetting Admin
+                    </div>
+                  </Link>
+                )}
 
                 {username && (
                   <Link
