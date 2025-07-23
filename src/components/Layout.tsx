@@ -14,14 +14,12 @@ export function Layout() {
   const { isAdmin } = useAdminStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [hasUnread, setHasUnread] = useState(false);
   const [isCometChatInitialized, setIsCometChatInitialized] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [isVettingAdmin, setIsVettingAdmin] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const adminDropdownRef = useRef<HTMLDivElement>(null);
   const notificationSoundRef = useRef<HTMLAudioElement>(null);
   const [notification, setNotification] = useState<{
     sender: { name: string; avatar?: string; uid: string };
@@ -32,9 +30,6 @@ export function Layout() {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
-      }
-      if (adminDropdownRef.current && !adminDropdownRef.current.contains(event.target as Node)) {
-        setIsAdminDropdownOpen(false);
       }
     };
 
@@ -234,14 +229,11 @@ export function Layout() {
   const navigationItems = [
     { to: "/my-collection", icon: <Coins className="h-4 w-4 mr-1" />, label: "My Collection" },
     { to: "/profile", icon: <User className="h-4 w-4 mr-1" />, label: "My Profile" },
+    { to: "/vetting", icon: <Shield className="h-4 w-4 mr-1" />, label: "Verification" },
     ...(isAdmin ? [{ to: "/create", icon: <Wand2 className="h-4 w-4 mr-1" />, label: "Create A Coin" }] : []),
     { to: "/upload", icon: <Upload className="h-4 w-4 mr-1" />, label: "Upload Coin" },
     { to: "/send", icon: <Send className="h-4 w-4 mr-1" />, label: "Send Coins" },
-  ];
-
-  const adminDropdownItems = [
-    { to: "/vetting", icon: <Shield className="h-4 w-4" />, label: "Verification" },
-    ...(isVettingAdmin ? [{ to: "/admin/vetting", icon: <UserCheck className="h-4 w-4" />, label: "Vetting Admin" }] : []),
+    ...(isVettingAdmin ? [{ to: "/admin/vetting", icon: <UserCheck className="h-4 w-4 mr-1" />, label: "Vetting Admin" }] : []),
   ];
 
   const exploreItems = [
@@ -307,35 +299,6 @@ export function Layout() {
                     </Link>
                   ))}
 
-                  {user && adminDropdownItems.length > 0 && (
-                    <div className="relative" ref={adminDropdownRef}>
-                      <button
-                        onClick={() => setIsAdminDropdownOpen(!isAdminDropdownOpen)}
-                        className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center gap-1"
-                      >
-                        <Shield className="h-4 w-4" />
-                        Admin Tools
-                        <ChevronDown className="h-4 w-4" />
-                      </button>
-
-                      {isAdminDropdownOpen && (
-                        <div className="absolute right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-sm rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-50">
-                          {adminDropdownItems.map((item) => (
-                            <Link
-                              key={item.to}
-                              to={item.to}
-                              className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 flex items-center gap-2"
-                              onClick={() => setIsAdminDropdownOpen(false)}
-                            >
-                              {item.icon}
-                              {item.label}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
                   <div className="relative" ref={dropdownRef}>
                     <button
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -346,13 +309,12 @@ export function Layout() {
                     </button>
 
                     {isDropdownOpen && (
-                      <div className="absolute right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-sm rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-50">
+                      <div className="absolute right-0 mt-2 w-48 bg-gray-900/95 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
                         {exploreItems.map((item) => (
                           <Link
                             key={item.to}
                             to={item.to}
                             className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 flex items-center gap-2"
-                            onClick={() => setIsDropdownOpen(false)}
                           >
                             {item.icon}
                             {item.label}
@@ -367,14 +329,14 @@ export function Layout() {
                       to={`/collection/${username}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-gray-300 hover:text-white px-2 py-2 rounded-md text-sm font-medium inline-flex items-center whitespace-nowrap"
+                      className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center"
                     >
                       <Globe className="h-4 w-4 mr-1" />
                       Public Page
                     </Link>
                   )}
 
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3 ml-4">
                     <Link
                       to="/notifications"
                       className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center"
@@ -408,7 +370,7 @@ export function Layout() {
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="text-gray-300 hover:text-white px-2 py-2 rounded-md text-sm font-medium inline-flex items-center whitespace-nowrap"
+                      className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center"
                     >
                       <LogOut className="h-4 w-4 mr-1" />
                       Logout
@@ -416,7 +378,7 @@ export function Layout() {
                   </div>
                 </>
               ) : (
-                <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-4">
                   <Link
                     to="/login"
                     className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
@@ -468,25 +430,17 @@ export function Layout() {
                   </Link>
                 ))}
 
-                {user && adminDropdownItems.length > 0 && (
-                  <div className="border-t border-white/10 pt-2 mt-2">
-                    <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                      Admin Tools
+                {isVettingAdmin && (
+                  <Link
+                    to="/admin/vetting"
+                    className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="h-4 w-4" />
+                      Vetting Admin
                     </div>
-                    {adminDropdownItems.map((item) => (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <div className="flex items-center gap-2">
-                          {item.icon}
-                          {item.label}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
+                  </Link>
                 )}
 
                 {username && (
