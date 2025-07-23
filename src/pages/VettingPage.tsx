@@ -80,17 +80,7 @@ export const VettingPage: React.FC = () => {
 
     setSubmitting(true);
     try {
-      // 1. Insert into Vetting_Table
-      const { error: insertError } = await supabase
-        .from('Vetting_Table')
-        .insert({ userId: user.email, status: false });
-
-      if (insertError) {
-        console.error('Error inserting vetting request:', insertError);
-        throw new Error('Failed to record your vetting request');
-      }
-
-      // 2. Send email to webhook
+      // Send email to webhook - the webhook will handle database insertion
       const webhookResponse = await fetch('https://hook.us2.make.com/s9roeat3y06cv3nuqy2sfo1odvtk9kpe', {
         method: 'POST',
         headers: {
@@ -101,15 +91,19 @@ export const VettingPage: React.FC = () => {
 
       if (!webhookResponse.ok) {
         console.error('Webhook call failed:', await webhookResponse.text());
-        throw new Error('Failed to notify the vetting team');
+        throw new Error('Failed to notify the vetting team. Please try again.');
       }
 
       toast.success('Your account has been submitted for vetting!');
       setVettingStatus('pending');
-      checkVettingStatus();
+      
+      // Add a small delay to allow the webhook to process and insert the record
+      setTimeout(() => {
+        checkVettingStatus();
+      }, 2000); // 2-second delay
     } catch (error) {
       console.error('Submission error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to submit for vetting');
+      toast.error(error instanceof Error ? error.message : 'Failed to submit for vetting.');
     } finally {
       setSubmitting(false);
     }
