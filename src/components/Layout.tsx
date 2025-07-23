@@ -307,27 +307,7 @@ export function Layout() {
                     </Link>
                   ))}
 
-                {user && adminDropdownItems.length > 0 && (
-                  <div className="border-t border-white/10 pt-2 mt-2">
-                    <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                      Admin Tools
-                    </div>
-                    {adminDropdownItems.map((item) => (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <div className="flex items-center gap-2">
-                          {item.icon}
-                          {item.label}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                  {user && (
+                  {user && adminDropdownItems.length > 0 && (
                     <div className="relative" ref={adminDropdownRef}>
                       <button
                         onClick={() => setIsAdminDropdownOpen(!isAdminDropdownOpen)}
@@ -339,7 +319,7 @@ export function Layout() {
                       </button>
 
                       {isAdminDropdownOpen && (
-                        <div className="absolute right-0 mt-2 w-48 bg-gray-900/95 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                        <div className="absolute right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-sm rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-50">
                           {adminDropdownItems.map((item) => (
                             <Link
                               key={item.to}
@@ -355,6 +335,7 @@ export function Layout() {
                       )}
                     </div>
                   )}
+                  
                   <div className="relative" ref={dropdownRef}>
                     <button
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -365,12 +346,13 @@ export function Layout() {
                     </button>
 
                     {isDropdownOpen && (
-                      <div className="absolute right-0 mt-2 w-48 bg-gray-900/95 rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                      <div className="absolute right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-sm rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-50">
                         {exploreItems.map((item) => (
                           <Link
                             key={item.to}
                             to={item.to}
                             className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 flex items-center gap-2"
+                            onClick={() => setIsDropdownOpen(false)}
                           >
                             {item.icon}
                             {item.label}
@@ -385,14 +367,14 @@ export function Layout() {
                       to={`/collection/${username}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center"
+                      className="text-gray-300 hover:text-white px-2 py-2 rounded-md text-sm font-medium inline-flex items-center whitespace-nowrap"
                     >
                       <Globe className="h-4 w-4 mr-1" />
                       Public Page
                     </Link>
                   )}
 
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
                     <Link
                       to="/notifications"
                       className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center"
@@ -426,7 +408,7 @@ export function Layout() {
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium inline-flex items-center"
+                      className="text-gray-300 hover:text-white px-2 py-2 rounded-md text-sm font-medium inline-flex items-center whitespace-nowrap"
                     >
                       <LogOut className="h-4 w-4 mr-1" />
                       Logout
@@ -486,6 +468,26 @@ export function Layout() {
                   </Link>
                 ))}
 
+                {user && adminDropdownItems.length > 0 && (
+                  <div className="border-t border-white/10 pt-2 mt-2">
+                    <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      Admin Tools
+                    </div>
+                    {adminDropdownItems.map((item) => (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <div className="flex items-center gap-2">
+                          {item.icon}
+                          {item.label}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
 
                 {username && (
                   <Link
