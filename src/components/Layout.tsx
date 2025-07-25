@@ -229,11 +229,9 @@ export function Layout() {
   const navigationItems = [
     { to: "/my-collection", icon: <Coins className="h-4 w-4 mr-1" />, label: "My Collection" },
     { to: "/profile", icon: <User className="h-4 w-4 mr-1" />, label: "My Profile" },
-    { to: "/vetting", icon: <Shield className="h-4 w-4 mr-1" />, label: "Verification" },
     ...(isAdmin ? [{ to: "/create", icon: <Wand2 className="h-4 w-4 mr-1" />, label: "Create A Coin" }] : []),
     { to: "/upload", icon: <Upload className="h-4 w-4 mr-1" />, label: "Upload Coin" },
     { to: "/send", icon: <Send className="h-4 w-4 mr-1" />, label: "Send Coins" },
-    ...(isVettingAdmin ? [{ to: "/admin/vetting", icon: <UserCheck className="h-4 w-4 mr-1" />, label: "Vetting Admin" }] : []),
   ];
 
   const exploreItems = [

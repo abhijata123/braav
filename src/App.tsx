@@ -174,22 +174,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/vetting"
-            element={
-              <ProtectedRoute>
-                <VettingPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/vetting"
-            element={
-              <ProtectedRoute>
-                <AdminVettingPage />
-              </ProtectedRoute>
-            }
-          />
         </Route>
 
         {/* Catch all route */}
