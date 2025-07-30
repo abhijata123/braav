@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, Outlet } from 'react-router-dom';
-import { LogOut, User, Menu, X, Globe, Trophy, Send, Search, MessageSquare, ChevronDown, Bell, MessageCircle, Coins, Wand2, Upload, Calendar, Shield, UserCheck } from 'lucide-react';
+import { LogOut, User, Menu, X, Globe, Trophy, Send, Search, MessageSquare, ChevronDown, Bell, MessageCircle, Coins, Wand2, Upload, Calendar, Shield, UserCheck, Wallet } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { Logo } from './Logo';
@@ -232,6 +232,7 @@ export function Layout() {
     ...(isAdmin ? [{ to: "/create", icon: <Wand2 className="h-4 w-4 mr-1" />, label: "Create A Coin" }] : []),
     { to: "/upload", icon: <Upload className="h-4 w-4 mr-1" />, label: "Upload Coin" },
     { to: "/send", icon: <Send className="h-4 w-4 mr-1" />, label: "Send Coins" },
+    { to: "/create-wallet", icon: <Wallet className="h-4 w-4 mr-1" />, label: "Create Wallet" },
   ];
 
   const exploreItems = [
