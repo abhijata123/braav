@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wallet, Loader2, Copy, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { Wallet, Loader2, Copy, CheckCircle } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import { getBackgroundImage } from '../utils/theme';
@@ -23,8 +23,6 @@ export const CreateCustodialWallet: React.FC = () => {
   const { theme } = useThemeStore();
   const [loading, setLoading] = useState(false);
   const [walletData, setWalletData] = useState<WalletResponse | null>(null);
-  const [showPrivateKey, setShowPrivateKey] = useState(false);
-  const [showMnemonic, setShowMnemonic] = useState(false);
 
   const createWallet = async () => {
     if (!user?.email) {
@@ -73,18 +71,6 @@ export const CreateCustodialWallet: React.FC = () => {
     }
   };
 
-  const maskPrivateKey = (key: string) => {
-    if (key.length <= 8) return key;
-    return `${key.substring(0, 6)}${'•'.repeat(key.length - 12)}${key.substring(key.length - 6)}`;
-  };
-
-  const maskMnemonic = (mnemonic: string) => {
-    const words = mnemonic.split(' ');
-    return words.map((word, index) => 
-      index < 3 || index >= words.length - 3 ? word : '•••••'
-    ).join(' ');
-  };
-
   return (
     <div 
       className="min-h-screen bg-[#0d182a] bg-opacity-95 py-8"
@@ -120,15 +106,15 @@ export const CreateCustodialWallet: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                    <span>Private key for transactions</span>
+                    <span>Ready for transactions</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                    <span>Recovery mnemonic phrase</span>
+                    <span>Blockchain compatibility</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                    <span>Full blockchain compatibility</span>
+                    <span>Secure infrastructure</span>
                   </li>
                 </ul>
               </div>
@@ -160,163 +146,38 @@ export const CreateCustodialWallet: React.FC = () => {
                 <p className="text-green-400">{walletData.message}</p>
               </div>
 
-              <div className="grid grid-cols-1 gap-6">
-                {/* Wallet Address */}
-                <div className="bg-white/5 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                      <Wallet className="h-5 w-5 text-blue-400" />
-                      Wallet Address
-                    </h3>
-                    <span className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded-full">
-                      Public
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 bg-gray-800/50 rounded-lg p-3 font-mono text-sm break-all">
-                      <span className="text-gray-300">{walletData.wallet.address}</span>
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(walletData.wallet.address, 'Wallet address')}
-                      className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                      title="Copy wallet address"
-                    >
-                      <Copy className="h-4 w-4 text-white" />
-                    </button>
-                  </div>
+              {/* Wallet Address */}
+              <div className="bg-white/5 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <Wallet className="h-5 w-5 text-blue-400" />
+                    Your Wallet Address
+                  </h3>
+                  <span className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded-full">
+                    Ready to Use
+                  </span>
                 </div>
-
-                {/* Private Key */}
-                <div className="bg-white/5 rounded-lg p-6 border border-red-500/20">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                      <AlertCircle className="h-5 w-5 text-red-400" />
-                      Private Key
-                    </h3>
-                    <span className="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded-full">
-                      Keep Secret
-                    </span>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 bg-gray-800/50 rounded-lg p-4 font-mono text-lg break-all">
+                    <span className="text-gray-300">{walletData.wallet.address}</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 bg-gray-800/50 rounded-lg p-3 font-mono text-sm break-all">
-                      <span className="text-gray-300">
-                        {showPrivateKey 
-                          ? walletData.wallet.privateKey 
-                          : maskPrivateKey(walletData.wallet.privateKey)
-                        }
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setShowPrivateKey(!showPrivateKey)}
-                      className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-                      title={showPrivateKey ? 'Hide private key' : 'Show private key'}
-                    >
-                      {showPrivateKey ? (
-                        <EyeOff className="h-4 w-4 text-gray-300" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-gray-300" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => copyToClipboard(walletData.wallet.privateKey, 'Private key')}
-                      className="p-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-                      title="Copy private key"
-                    >
-                      <Copy className="h-4 w-4 text-white" />
-                    </button>
-                  </div>
-                  <p className="text-xs text-red-400 mt-2">
-                    ⚠️ Never share your private key with anyone. Anyone with access to this key can control your wallet.
-                  </p>
+                  <button
+                    onClick={() => copyToClipboard(walletData.wallet.address, 'Wallet address')}
+                    className="p-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                    title="Copy wallet address"
+                  >
+                    <Copy className="h-5 w-5 text-white" />
+                  </button>
                 </div>
-
-                {/* Recovery Phrase */}
-                <div className="bg-white/5 rounded-lg p-6 border border-yellow-500/20">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                      <AlertCircle className="h-5 w-5 text-yellow-400" />
-                      Recovery Phrase
-                    </h3>
-                    <span className="px-2 py-1 bg-yellow-500/20 text-yellow-300 text-xs rounded-full">
-                      Backup Required
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 bg-gray-800/50 rounded-lg p-3 font-mono text-sm">
-                      <span className="text-gray-300">
-                        {showMnemonic 
-                          ? walletData.wallet.mnemonic 
-                          : maskMnemonic(walletData.wallet.mnemonic)
-                        }
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setShowMnemonic(!showMnemonic)}
-                      className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-                      title={showMnemonic ? 'Hide recovery phrase' : 'Show recovery phrase'}
-                    >
-                      {showMnemonic ? (
-                        <EyeOff className="h-4 w-4 text-gray-300" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-gray-300" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => copyToClipboard(walletData.wallet.mnemonic, 'Recovery phrase')}
-                      className="p-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors"
-                      title="Copy recovery phrase"
-                    >
-                      <Copy className="h-4 w-4 text-white" />
-                    </button>
-                  </div>
-                  <p className="text-xs text-yellow-400 mt-2">
-                    💾 Store this recovery phrase safely. It can be used to restore your wallet if needed.
-                  </p>
-                </div>
-
-                {/* Public Key */}
-                <div className="bg-white/5 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white">Public Key</h3>
-                    <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full">
-                      Safe to Share
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 bg-gray-800/50 rounded-lg p-3 font-mono text-sm break-all">
-                      <span className="text-gray-300">{walletData.wallet.publicKey}</span>
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(walletData.wallet.publicKey, 'Public key')}
-                      className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                      title="Copy public key"
-                    >
-                      <Copy className="h-4 w-4 text-white" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6 mt-8">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-blue-400" />
-                  Important Security Notes
-                </h3>
-                <ul className="text-gray-300 space-y-2 text-sm">
-                  <li>• Your wallet address is public and can be shared safely</li>
-                  <li>• Never share your private key or recovery phrase with anyone</li>
-                  <li>• Store your recovery phrase in a secure location offline</li>
-                  <li>• This is a custodial wallet managed by our secure infrastructure</li>
-                  <li>• You can use this wallet for all blockchain transactions on our platform</li>
-                </ul>
+                <p className="text-sm text-gray-400 mt-3">
+                  This is your wallet address. You can share this safely with others to receive transactions.
+                </p>
               </div>
 
               <div className="text-center mt-8">
                 <button
                   onClick={() => {
                     setWalletData(null);
-                    setShowPrivateKey(false);
-                    setShowMnemonic(false);
                   }}
                   className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                 >
