@@ -232,7 +232,6 @@ export function Layout() {
     ...(isAdmin ? [{ to: "/create", icon: <Wand2 className="h-4 w-4 mr-1" />, label: "Create A Coin" }] : []),
     { to: "/upload", icon: <Upload className="h-4 w-4 mr-1" />, label: "Upload Coin" },
     { to: "/send", icon: <Send className="h-4 w-4 mr-1" />, label: "Send Coins" },
-    { to: "/create-wallet", icon: <Wallet className="h-4 w-4 mr-1" />, label: "Create Wallet" },
   ];
 
   const exploreItems = [
@@ -240,6 +239,7 @@ export function Layout() {
     { to: "/events", icon: <Calendar className="h-4 w-4" />, label: "Events" },
     { to: "/leaderboard", icon: <Trophy className="h-4 w-4" />, label: "Leaderboard" },
     { to: "/search", icon: <Search className="h-4 w-4" />, label: "Search Users" },
+    { to: "/create-wallet", icon: <Wallet className="h-4 w-4" />, label: "Create Wallet" },
   ];
 
   return (

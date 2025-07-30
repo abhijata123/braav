@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Loader2, Upload, X, Share2, Eye, EyeOff, Copy } from 'lucide-react';
+import { Save, Loader2, Upload, X, Share2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
@@ -28,17 +28,10 @@ interface UserProfile {
   Share_Notes: boolean;
 }
 
-interface WalletInfo {
-  wallet_address: string;
-  'private key': string;
-}
-
 export const UserDetails: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
-  const [showWalletAddress, setShowWalletAddress] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editedProfile, setEditedProfile] = useState<UserProfile | null>(null);
@@ -145,58 +138,12 @@ export const UserDetails: React.FC = () => {
         setPreview(data['piture link']);
       }
 
-      // Fetch wallet information
-      await fetchWalletInfo();
     } catch (error) {
       console.error('Error fetching profile:', error);
       toast.error('Failed to load profile');
     } finally {
       setLoading(false);
     }
-  };
-
-  const fetchWalletInfo = async () => {
-    if (!user?.email) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('coin_wallets')
-        .select('wallet_address, "private key"')
-        .eq('user_id', user.email)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching wallet info:', error);
-        return;
-      }
-
-      if (data) {
-        setWalletInfo(data);
-      }
-    } catch (error) {
-      console.error('Error fetching wallet info:', error);
-    }
-  };
-
-  const handleCopyWalletAddress = async () => {
-    if (!walletInfo?.wallet_address) {
-      toast.error('No wallet address available');
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(walletInfo.wallet_address);
-      toast.success('Wallet address copied to clipboard!');
-    } catch (error) {
-      console.error('Failed to copy wallet address:', error);
-      toast.error('Failed to copy wallet address');
-    }
-  };
-
-  const maskWalletAddress = (address: string) => {
-    if (!address) return '';
-    if (address.length <= 8) return address;
-    return `${address.substring(0, 6)}${'•'.repeat(address.length - 12)}${address.substring(address.length - 6)}`;
   };
 
   const uploadProfilePicture = async (file: File): Promise<string> => {
@@ -558,69 +505,6 @@ export const UserDetails: React.FC = () => {
                 placeholder="City, State/Province, Country"
                 className="mt-1 block w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
-            </div>
-
-            {/* Wallet Address Section */}
-            <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg p-6 border border-purple-500/20">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">W</span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-white">Wallet Address</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded-full">
-                    Private
-                  </span>
-                </div>
-              </div>
-              
-              {walletInfo?.wallet_address ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 bg-gray-800/50 rounded-lg p-3 font-mono text-sm">
-                      <span className="text-gray-300">
-                        {showWalletAddress 
-                          ? walletInfo.wallet_address 
-                          : maskWalletAddress(walletInfo.wallet_address)
-                        }
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setShowWalletAddress(!showWalletAddress)}
-                      className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-                      title={showWalletAddress ? 'Hide wallet address' : 'Show wallet address'}
-                    >
-                      {showWalletAddress ? (
-                        <EyeOff className="h-4 w-4 text-gray-300" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-gray-300" />
-                      )}
-                    </button>
-                    <button
-                      onClick={handleCopyWalletAddress}
-                      className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                      title="Copy wallet address"
-                    >
-                      <Copy className="h-4 w-4 text-white" />
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    🔒 Your wallet address is private and only visible to you. Use the copy button to safely share it when needed.
-                  </p>
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-gray-400 text-2xl">💳</span>
-                  </div>
-                  <p className="text-gray-400 mb-2">No wallet address found</p>
-                  <p className="text-xs text-gray-500">
-                    Your wallet will be created automatically when you perform blockchain transactions.
-                  </p>
-                </div>
-              )}
             </div>
 
             <div className="space-y-4">
