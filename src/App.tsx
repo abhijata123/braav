@@ -20,6 +20,7 @@ import { Posts } from './pages/Posts';
 import { CreateCoin } from './pages/CreateCoin';
 import { Events } from './pages/Events';
 import { CreateCustodialWallet } from './pages/CreateCustodialWallet';
+import { SubmitVettingRequests } from './pages/SubmitVettingRequests';
 import { useThemeStore } from './store/themeStore';
 import { useAuthStore } from './store/authStore';
 import { useAdminStore } from './store/adminStore';
@@ -178,6 +179,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CreateCustodialWallet />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/submit-vetting-requests"
+            element={
+              <ProtectedRoute>
+                <SubmitVettingRequests />
               </ProtectedRoute>
             }
           />

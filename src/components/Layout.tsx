@@ -240,6 +240,7 @@ export function Layout() {
     { to: "/leaderboard", icon: <Trophy className="h-4 w-4" />, label: "Leaderboard" },
     { to: "/search", icon: <Search className="h-4 w-4" />, label: "Search Users" },
     { to: "/create-wallet", icon: <Wallet className="h-4 w-4" />, label: "Create Wallet" },
+    { to: "/submit-vetting-requests", icon: <Shield className="h-4 w-4" />, label: "Submit Vetting Request" },
   ];
 
   return (
