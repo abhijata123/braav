@@ -69,7 +69,7 @@ export const SubmitVettingRequests: React.FC = () => {
 
     setPageState('submitting');
     try {
-      const response = await fetch('https://hook.us2.make.com/ysuh910gw8vx5k1pii9es8jfwuguxnfs', {
+      const response = await fetch('https://hook.us2.make.com/aqt3pgb58d6iqf01fgr93ftsaaymv2qm', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
