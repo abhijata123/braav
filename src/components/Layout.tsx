@@ -426,6 +426,15 @@ export function Layout() {
                     <div className="flex items-center gap-2">
                       {item.icon}
                       {item.label}
+                {isVettingAdmin && (
+                  <Link
+                    to="/admin/vetting-dashboard"
+                    className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 flex items-center gap-2"
+                  >
+                    <UserCheck className="h-4 w-4" />
+                    Vetting Dashboard
+                  </Link>
+                )}
                     </div>
                   </Link>
                 ))}

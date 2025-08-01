@@ -21,6 +21,7 @@ import { CreateCoin } from './pages/CreateCoin';
 import { Events } from './pages/Events';
 import { CreateCustodialWallet } from './pages/CreateCustodialWallet';
 import { SubmitVettingRequests } from './pages/SubmitVettingRequests';
+import { VettingAdminDashboard } from './pages/VettingAdminDashboard';
 import { useThemeStore } from './store/themeStore';
 import { useAuthStore } from './store/authStore';
 import { useAdminStore } from './store/adminStore';
@@ -48,6 +49,28 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Vetting Admin Route wrapper component
+const VettingAdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuthStore();
+  const location = useLocation();
+
+  const AUTHORIZED_ADMINS = [
+    'anna+test@braav.co',
+    'abhijatasen18+charlotte@gmail.com',
+    'ashleyblewis@gmail.com'
+  ];
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!AUTHORIZED_ADMINS.includes(user.email!)) {
     return <Navigate to="/" replace />;
   }
 
@@ -188,6 +211,14 @@ function App() {
               <ProtectedRoute>
                 <SubmitVettingRequests />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/vetting-dashboard"
+            element={
+              <VettingAdminRoute>
+                <VettingAdminDashboard />
+              </VettingAdminRoute>
             }
           />
         </Route>
