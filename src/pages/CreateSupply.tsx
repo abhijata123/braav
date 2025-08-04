@@ -23,7 +23,7 @@ export const CreateSupply: React.FC = () => {
   const [supplyLimit, setSupplyLimit] = useState<number>(100);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<SupplyResponse | null>(null);
-  const [currentTokenNumber, setCurrentTokenNumber] = useState<number>(8);
+  const [currentTokenNumber, setCurrentTokenNumber] = useState<number>(12);
 
   useEffect(() => {
     // Load the last used token number from localStorage
