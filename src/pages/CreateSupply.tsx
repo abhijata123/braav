@@ -29,7 +29,12 @@ export const CreateSupply: React.FC = () => {
     // Load the last used token number from localStorage
     const lastUsedNumber = localStorage.getItem('lastBraavTokenNumber');
     if (lastUsedNumber) {
-      setCurrentTokenNumber(parseInt(lastUsedNumber) + 1);
+      const storedNum = parseInt(lastUsedNumber);
+      // Ensure we start from at least 11, or increment from stored value
+      setCurrentTokenNumber(Math.max(11, storedNum + 1));
+    } else {
+      // Default to 11 if no previous number exists
+      setCurrentTokenNumber(11);
     }
   }, []);
 
@@ -50,7 +55,14 @@ export const CreateSupply: React.FC = () => {
     setResponse(null);
 
     try {
+      // Capture the current token number for this request
+      const tokenNumberForThisRequest = currentTokenNumber;
       const tokenTypeName = `BRAAV${currentTokenNumber}`;
+      
+      // Immediately increment and save the counter for the next request
+      // This ensures the counter advances even if the request fails
+      localStorage.setItem('lastBraavTokenNumber', currentTokenNumber.toString());
+      setCurrentTokenNumber(currentTokenNumber + 1);
       
       const payload = {
         supplyLimit: supplyLimit,
@@ -73,10 +85,6 @@ export const CreateSupply: React.FC = () => {
       setResponse(result);
 
       if (result.success) {
-        // Store the used token number in localStorage
-        localStorage.setItem('lastBraavTokenNumber', currentTokenNumber.toString());
-        // Increment for next use
-        setCurrentTokenNumber(currentTokenNumber + 1);
         toast.success('Supply created successfully!');
       } else {
         toast.error(result.message || 'Failed to create supply');
@@ -260,7 +268,7 @@ export const CreateSupply: React.FC = () => {
                         <span className="text-gray-400 text-sm">Token Type:</span>
                         <div className="bg-gray-900/50 rounded-md p-3 mt-1">
                           <code className="text-blue-400 font-mono text-lg">
-                            BRAAV{currentTokenNumber - 1}
+                            {response.result.digest ? `BRAAV${currentTokenNumber - 1}` : 'N/A'}
                           </code>
                         </div>
                       </div>
