@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, Loader2, CheckCircle, AlertCircle, ArrowLeft, Hash, Zap } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import { useAdminStore } from '../store/adminStore';
 import { useThemeStore } from '../store/themeStore';
 import { getBackgroundImage } from '../utils/theme';
 import toast from 'react-hot-toast';
@@ -20,7 +19,6 @@ interface SupplyResponse {
 export const CreateSupply: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { isAdmin } = useAdminStore();
   const { theme } = useThemeStore();
   const [supplyLimit, setSupplyLimit] = useState<number>(100);
   const [loading, setLoading] = useState(false);
@@ -28,30 +26,18 @@ export const CreateSupply: React.FC = () => {
   const [currentTokenNumber, setCurrentTokenNumber] = useState<number>(8);
 
   useEffect(() => {
-    // Check if user is admin
-    if (!isAdmin && user) {
-      toast.error('Access denied: Admin privileges required');
-      navigate('/');
-      return;
-    }
-
     // Load the last used token number from localStorage
     const lastUsedNumber = localStorage.getItem('lastBraavTokenNumber');
     if (lastUsedNumber) {
       setCurrentTokenNumber(parseInt(lastUsedNumber) + 1);
     }
-  }, [isAdmin, user, navigate]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user) {
       toast.error('Please log in to create supply');
-      return;
-    }
-
-    if (!isAdmin) {
-      toast.error('Admin privileges required');
       return;
     }
 
@@ -112,18 +98,6 @@ export const CreateSupply: React.FC = () => {
     return (
       <div className="min-h-screen bg-[#0d182a] flex items-center justify-center">
         <div className="text-white">Please log in to access this page</div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-[#0d182a] flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mb-4 mx-auto" />
-          <p className="text-white text-lg">Access Denied</p>
-          <p className="text-gray-400">Admin privileges required to access this page</p>
-        </div>
       </div>
     );
   }

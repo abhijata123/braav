@@ -229,9 +229,9 @@ export function Layout() {
   const navigationItems = [
     { to: "/my-collection", icon: <Coins className="h-4 w-4 mr-1" />, label: "My Collection" },
     { to: "/profile", icon: <User className="h-4 w-4 mr-1" />, label: "My Profile" },
+    { to: "/create-supply", icon: <Package className="h-4 w-4 mr-1" />, label: "Create Supply" },
     ...(isAdmin ? [
       { to: "/create", icon: <Wand2 className="h-4 w-4 mr-1" />, label: "Create A Coin" },
-      { to: "/create-supply", icon: <Package className="h-4 w-4 mr-1" />, label: "Create Supply" }
     ] : []),
     { to: "/upload", icon: <Upload className="h-4 w-4 mr-1" />, label: "Upload Coin" },
     { to: "/send", icon: <Send className="h-4 w-4 mr-1" />, label: "Send Coins" },

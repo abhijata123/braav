@@ -137,9 +137,9 @@ function App() {
           <Route
             path="/create-supply"
             element={
-              <AdminRoute>
+              <ProtectedRoute>
                 <CreateSupply />
-              </AdminRoute>
+              </ProtectedRoute>
             }
           />
           <Route
