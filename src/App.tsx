@@ -22,6 +22,7 @@ import { Events } from './pages/Events';
 import { CreateCustodialWallet } from './pages/CreateCustodialWallet';
 import { SubmitVettingRequests } from './pages/SubmitVettingRequests';
 import { VettingAdminDashboard } from './pages/VettingAdminDashboard';
+import { CreateSupply } from './pages/CreateSupply';
 import { useThemeStore } from './store/themeStore';
 import { useAuthStore } from './store/authStore';
 import { useAdminStore } from './store/adminStore';
@@ -130,6 +131,14 @@ function App() {
             element={
               <AdminRoute>
                 <CreateCoin />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/create-supply"
+            element={
+              <AdminRoute>
+                <CreateSupply />
               </AdminRoute>
             }
           />
