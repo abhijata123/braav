@@ -229,7 +229,6 @@ export function Layout() {
   const navigationItems = [
     { to: "/my-collection", icon: <Coins className="h-4 w-4 mr-1" />, label: "My Collection" },
     { to: "/profile", icon: <User className="h-4 w-4 mr-1" />, label: "My Profile" },
-    { to: "/create-supply", icon: <Package className="h-4 w-4 mr-1" />, label: "Create Supply" },
     ...(isAdmin ? [
       { to: "/create", icon: <Wand2 className="h-4 w-4 mr-1" />, label: "Create A Coin" },
     ] : []),
@@ -242,6 +241,7 @@ export function Layout() {
     { to: "/events", icon: <Calendar className="h-4 w-4" />, label: "Events" },
     { to: "/leaderboard", icon: <Trophy className="h-4 w-4" />, label: "Leaderboard" },
     { to: "/search", icon: <Search className="h-4 w-4" />, label: "Search Users" },
+    { to: "/create-supply", icon: <Package className="h-4 w-4" />, label: "Create Supply" },
     { to: "/create-wallet", icon: <Wallet className="h-4 w-4" />, label: "Create Wallet" },
     { to: "/submit-vetting-requests", icon: <Shield className="h-4 w-4" />, label: "Submit Vetting Request" },
   ];
