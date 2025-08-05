@@ -47,6 +47,10 @@ interface VettingWallet {
   publicKey: string;
   mnemonic: string;
   created_at: string;
+  user_details: {
+    Username: string;
+    'piture link': string | null;
+  } | null;
 }
 
 interface MintResponse {
@@ -117,8 +121,13 @@ export const MintNFT: React.FC = () => {
       // Fetch user's vetting wallets
       const { data: walletsData, error: walletsError } = await supabase
         .from('vetting_wallets')
-        .select('*')
-        .eq('user_id', user.email)
+        .select(`
+          *,
+          user_details:user_id (
+            Username,
+            "piture link"
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (walletsError) throw walletsError;
@@ -375,7 +384,7 @@ export const MintNFT: React.FC = () => {
                     <option value="">Select a wallet...</option>
                     {wallets.map((wallet) => (
                       <option key={wallet.id} value={wallet.id}>
-                        {wallet.wallet_address.slice(0, 8)}...{wallet.wallet_address.slice(-6)}
+                        {wallet.user_details?.Username || 'Unknown User'}
                       </option>
                     ))}
                   </select>
@@ -384,6 +393,12 @@ export const MintNFT: React.FC = () => {
                     <div className="mt-4 p-4 bg-white/5 rounded-lg">
                       <h4 className="text-white font-medium mb-2">Wallet Details</h4>
                       <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="text-gray-400">Owner: </span>
+                          <span className="text-white font-medium">
+                            {selectedWallet.user_details?.Username || 'Unknown User'}
+                          </span>
+                        </div>
                         <div>
                           <span className="text-gray-400">Address: </span>
                           <span className="text-white font-mono text-xs break-all">
