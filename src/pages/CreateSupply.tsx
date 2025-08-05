@@ -5,14 +5,34 @@ import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import { getBackgroundImage } from '../utils/theme';
 import toast from 'react-hot-toast';
+import { supabase } from '../lib/supabase';
 
 interface SupplyResponse {
   success: boolean;
   message: string;
   result: {
     digest: string;
-    transaction: any;
-    effects: any;
+    transaction: {
+      data: {
+        sender: string;
+        transaction: {
+          transactions: Array<{
+            MoveCall?: {
+              package: string;
+              module: string;
+              function: string;
+              type_arguments: string[];
+            };
+          }>;
+        };
+      };
+    };
+    objectChanges: Array<{
+      type: string;
+      objectType: string;
+      objectId: string;
+      owner: any;
+    }>;
   };
 }
 
@@ -86,6 +106,14 @@ export const CreateSupply: React.FC = () => {
 
       if (result.success) {
         toast.success('Supply created successfully!');
+        
+        // Extract data from the response and store in Supabase
+        try {
+          await storeSupplyData(result, tokenTypeName);
+        } catch (error) {
+          console.error('Error storing supply data:', error);
+          toast.error('Supply created but failed to store data');
+        }
       } else {
         toast.error(result.message || 'Failed to create supply');
       }
@@ -94,6 +122,61 @@ export const CreateSupply: React.FC = () => {
       toast.error(error instanceof Error ? error.message : 'Failed to create supply');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const storeSupplyData = async (result: SupplyResponse['result'], contractName: string) => {
+    try {
+      // Extract PACKAGE_ID from transaction data
+      const packageId = result.transaction.data.transaction.transactions
+        .find(tx => tx.MoveCall)?.MoveCall?.package || '';
+      
+      // Extract RECIPIENT_ADDRESS from transaction sender
+      const recipientAddress = result.transaction.data.sender;
+      
+      // Extract IDs from objectChanges
+      let supplyCap = '';
+      let lineageId = '';
+      let counterId = '';
+      
+      result.objectChanges.forEach(change => {
+        if (change.type === 'created') {
+          if (change.objectType.includes('::braav_public::BRAAV<')) {
+            supplyCap = change.objectId;
+          } else if (change.objectType.includes('::braav_public::Lineage')) {
+            lineageId = change.objectId;
+          } else if (change.objectType.includes('::counter::Counter')) {
+            counterId = change.objectId;
+          }
+        }
+      });
+      
+      // Insert into Supabase Supplies table
+      const { error } = await supabase
+        .from('Supplies')
+        .insert({
+          SUPPLY_CAP_ID: supplyCap,
+          LINEAGE_ID: lineageId,
+          COUNTER_ID: counterId,
+          PACKAGE_ID: packageId,
+          Contract_Name: contractName,
+          RECIPIENT_ADDRESS: recipientAddress
+        });
+      
+      if (error) throw error;
+      
+      console.log('Supply data stored successfully:', {
+        SUPPLY_CAP_ID: supplyCap,
+        LINEAGE_ID: lineageId,
+        COUNTER_ID: counterId,
+        PACKAGE_ID: packageId,
+        Contract_Name: contractName,
+        RECIPIENT_ADDRESS: recipientAddress
+      });
+      
+    } catch (error) {
+      console.error('Error storing supply data:', error);
+      throw error;
     }
   };
 
