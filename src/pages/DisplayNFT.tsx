@@ -203,7 +203,7 @@ export const DisplayNFT: React.FC = () => {
             <div className="space-y-8 max-w-4xl mx-auto">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Coin Selection */}
-                <div className="bg-white/5 rounded-lg p-6">
+                <div className="bg-white/5 rounded-lg p-4 sm:p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Image className="h-5 w-5 text-blue-400" />
                     <h3 className="text-lg font-semibold text-white">Select Your Coin</h3>
@@ -228,13 +228,13 @@ export const DisplayNFT: React.FC = () => {
                   {selectedCoin && (
                     <div className="mt-4 p-4 bg-white/5 rounded-lg">
                       <h4 className="text-white font-medium mb-3">Coin Preview</h4>
-                      <div className="flex items-center gap-4 mb-4">
+                      <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
                         <img
                           src={selectedCoin['Coin Image']}
                           alt={selectedCoin['Coin Name']}
-                          className="w-16 h-16 object-contain rounded bg-white/10 p-2"
+                          className="w-16 h-16 object-contain rounded bg-white/10 p-2 flex-shrink-0"
                         />
-                        <div>
+                        <div className="text-center sm:text-left">
                           <p className="text-white font-medium">{selectedCoin['Coin Name']}</p>
                           <p className="text-sm text-gray-400">
                             {selectedCoin['Number Of Coins']} coins owned
@@ -255,16 +255,16 @@ export const DisplayNFT: React.FC = () => {
                         {selectedCoin['Notes'] && (
                           <div>
                             <span className="text-gray-400">Description: </span>
-                            <span className="text-white">{selectedCoin['Notes']}</span>
+                            <span className="text-white break-words">{selectedCoin['Notes']}</span>
                           </div>
                         )}
                         <div>
                           <span className="text-gray-400">Public Link: </span>
-                          <a 
+                          <a
                             href={generatePublicLink(selectedCoin)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1"
+                            className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1 break-all"
                           >
                             View Public Page
                             <ExternalLink size={12} />
@@ -284,7 +284,7 @@ export const DisplayNFT: React.FC = () => {
                 </div>
 
                 {/* Supply Selection */}
-                <div className="bg-white/5 rounded-lg p-6">
+                <div className="bg-white/5 rounded-lg p-4 sm:p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Package className="h-5 w-5 text-purple-400" />
                     <h3 className="text-lg font-semibold text-white">Select Supply</h3>
@@ -316,9 +316,11 @@ export const DisplayNFT: React.FC = () => {
                         </div>
                         <div>
                           <span className="text-gray-400">Package ID: </span>
-                          <span className="text-white font-mono text-xs break-all">
+                          <div className="bg-gray-800/50 rounded-md p-2 mt-1">
+                            <span className="text-white font-mono text-xs break-all">
                             {selectedSupply.PACKAGE_ID}
-                          </span>
+                            </span>
+                          </div>
                         </div>
                         <div>
                           <span className="text-gray-400">Created: </span>
@@ -341,11 +343,11 @@ export const DisplayNFT: React.FC = () => {
               </div>
 
               {/* Action Button */}
-              <div className="text-center">
+              <div className="text-center px-4">
                 <button
                   onClick={handleDisplayNFT}
                   disabled={submitting || !selectedCoin || !selectedSupply}
-                  className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all transform hover:scale-105 shadow-lg mx-auto"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 sm:px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all transform hover:scale-105 shadow-lg mx-auto"
                 >
                   {submitting ? (
                     <Loader2 className="animate-spin h-6 w-6" />
@@ -363,7 +365,7 @@ export const DisplayNFT: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto px-4">
               {error ? (
                 <div className="text-center mb-8">
                   <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -385,15 +387,15 @@ export const DisplayNFT: React.FC = () => {
                   {/* Display URL */}
                   <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-6 mb-6">
                     <h3 className="text-xl font-semibold text-white mb-4">View Your NFT</h3>
-                    <div className="bg-gray-800/50 rounded-lg p-4">
+                    <div className="bg-gray-800/50 rounded-lg p-3 sm:p-4">
                       <a
                         href={`https://testnet.suivision.xyz/object/${response}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 font-mono text-lg break-all flex items-center gap-2 justify-center"
+                        className="text-blue-400 hover:text-blue-300 font-mono text-xs sm:text-sm break-all flex flex-col items-center gap-2 justify-center text-center"
                       >
                         <ExternalLink className="h-5 w-5 flex-shrink-0" />
-                        https://testnet.suivision.xyz/object/{response}
+                        <span className="break-all leading-relaxed">https://testnet.suivision.xyz/object/{response}</span>
                       </a>
                     </div>
                     <p className="text-gray-400 text-sm mt-3">
@@ -408,28 +410,30 @@ export const DisplayNFT: React.FC = () => {
                         <Image className="h-6 w-6 text-purple-400" />
                         NFT Details
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="flex items-center gap-4">
+                      <div className="space-y-6">
+                        <div className="flex flex-col items-center gap-4">
                           <img
                             src={selectedCoin['Coin Image']}
                             alt={selectedCoin['Coin Name']}
-                            className="w-20 h-20 object-contain rounded-lg bg-white/10 p-2"
+                            className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg bg-white/10 p-2 flex-shrink-0"
                           />
-                          <div>
+                          <div className="text-center">
                             <h4 className="text-white font-semibold">{selectedCoin['Coin Name']}</h4>
                             <p className="text-gray-400 text-sm">Challenge Coin NFT</p>
                           </div>
                         </div>
-                        <div className="space-y-2 text-sm">
-                          <div>
+                        <div className="grid grid-cols-1 gap-4 text-sm">
+                          <div className="bg-white/5 rounded-lg p-3">
                             <span className="text-gray-400">Contract: </span>
                             <span className="text-white font-mono">{selectedSupply.Contract_Name}</span>
                           </div>
-                          <div>
+                          <div className="bg-white/5 rounded-lg p-3">
                             <span className="text-gray-400">Display ID: </span>
-                            <span className="text-white font-mono">{response}</span>
+                            <div className="bg-gray-800/50 rounded-md p-2 mt-1">
+                              <span className="text-white font-mono text-xs break-all">{response}</span>
+                            </div>
                           </div>
-                          <div>
+                          <div className="bg-white/5 rounded-lg p-3">
                             <span className="text-gray-400">Date Issued: </span>
                             <span className="text-white">
                               {new Date(selectedCoin['Date Issued']).toLocaleDateString()}
@@ -446,13 +450,13 @@ export const DisplayNFT: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
                 <button
                   onClick={resetForm}
-                  className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                 >
                   Display Another NFT
                 </button>
                 <button
                   onClick={() => navigate('/')}
-                  className="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                 >
                   Back to Dashboard
                 </button>
