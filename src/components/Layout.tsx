@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, Outlet } from 'react-router-dom';
-import { LogOut, User, Menu, X, Globe, Trophy, Send, Search, MessageSquare, ChevronDown, Bell, MessageCircle, Coins, Wand2, Upload, Calendar, Shield, UserCheck, Wallet, Package } from 'lucide-react';
+import { LogOut, User, Menu, X, Globe, Trophy, Send, Search, MessageSquare, ChevronDown, Bell, MessageCircle, Coins, Wand2, Upload, Calendar, Shield, UserCheck, Wallet, Package, Image } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { Logo } from './Logo';
@@ -243,6 +243,7 @@ export function Layout() {
     { to: "/search", icon: <Search className="h-4 w-4" />, label: "Search Users" },
     { to: "/create-supply", icon: <Package className="h-4 w-4" />, label: "Create Supply" },
     { to: "/mint-nfts", icon: <Coins className="h-4 w-4" />, label: "Mint NFTs" },
+    { to: "/display-nft", icon: <Image className="h-4 w-4" />, label: "Display NFT" },
     { to: "/create-wallet", icon: <Wallet className="h-4 w-4" />, label: "Create Wallet" },
     { to: "/submit-vetting-requests", icon: <Shield className="h-4 w-4" />, label: "Submit Vetting Request" },
   ];

@@ -27,6 +27,7 @@ import { useThemeStore } from './store/themeStore';
 import { useAuthStore } from './store/authStore';
 import { useAdminStore } from './store/adminStore';
 import { MintNFT } from './pages/MintNFT';
+import { DisplayNFT } from './pages/DisplayNFT';
 
 // Protected Route wrapper component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -148,6 +149,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MintNFT />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/display-nft"
+            element={
+              <ProtectedRoute>
+                <DisplayNFT />
               </ProtectedRoute>
             }
           />
