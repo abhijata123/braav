@@ -32,9 +32,7 @@ interface Supply {
 }
 
 interface WebhookResponse {
-  success: boolean;
-  message: string;
-  data?: any;
+  displayId: string;
 }
 
 export const DisplayNFT: React.FC = () => {
@@ -50,7 +48,8 @@ export const DisplayNFT: React.FC = () => {
   
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [response, setResponse] = useState<WebhookResponse | null>(null);
+  const [response, setResponse] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -104,6 +103,7 @@ export const DisplayNFT: React.FC = () => {
 
     setSubmitting(true);
     setResponse(null);
+    setError(null);
 
     try {
       const payload = {
@@ -123,20 +123,18 @@ export const DisplayNFT: React.FC = () => {
       });
 
       if (!webhookResponse.ok) {
-        throw new Error('Failed to display NFT');
+        const errorText = await webhookResponse.text();
+        throw new Error(errorText || 'Failed to display NFT');
       }
 
-      const result: WebhookResponse = await webhookResponse.json();
-      setResponse(result);
-
-      if (result.success) {
-        toast.success('NFT displayed successfully!');
-      } else {
-        toast.error(result.message || 'Failed to display NFT');
-      }
+      const displayId = await webhookResponse.text();
+      setResponse(displayId.trim());
+      toast.success('NFT displayed successfully!');
     } catch (error) {
       console.error('Error displaying NFT:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to display NFT');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to display NFT';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -146,6 +144,7 @@ export const DisplayNFT: React.FC = () => {
     setSelectedCoin(null);
     setSelectedSupply(null);
     setResponse(null);
+    setError(null);
   };
 
   if (!user) {
@@ -365,75 +364,78 @@ export const DisplayNFT: React.FC = () => {
             </div>
           ) : (
             <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-8">
-                <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
-                  response.success 
-                    ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
-                    : 'bg-gradient-to-br from-red-500 to-pink-600'
-                }`}>
-                  {response.success ? (
-                    <CheckCircle className="h-10 w-10 text-white" />
-                  ) : (
+              {error ? (
+                <div className="text-center mb-8">
+                  <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
                     <AlertCircle className="h-10 w-10 text-white" />
-                  )}
-                </div>
-                <h2 className="text-3xl font-bold text-white mb-4">
-                  {response.success ? '🎉 NFT Added to Your Wallet!' : '❌ Display Failed'}
-                </h2>
-                <p className={`text-lg ${
-                  response.success ? 'text-green-400' : 'text-red-400'
-                }`}>
-                  {response.message}
-                </p>
-              </div>
-
-              {response.success && selectedCoin && selectedSupply && (
-                <div className="space-y-6">
-                  {/* NFT Summary */}
-                  <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-6">
-                    <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                      <Image className="h-6 w-6 text-blue-400" />
-                      NFT Summary
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="flex items-center gap-4">
-                        <img
-                          src={selectedCoin['Coin Image']}
-                          alt={selectedCoin['Coin Name']}
-                          className="w-20 h-20 object-contain rounded-lg bg-white/10 p-2"
-                        />
-                        <div>
-                          <h4 className="text-white font-semibold">{selectedCoin['Coin Name']}</h4>
-                          <p className="text-gray-400 text-sm">Challenge Coin NFT</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div>
-                          <span className="text-gray-400">Contract: </span>
-                          <span className="text-white font-mono">{selectedSupply.Contract_Name}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">Original Coins: </span>
-                          <span className="text-white">{selectedCoin['Number Of Coins']}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">Date Issued: </span>
-                          <span className="text-white">
-                            {new Date(selectedCoin['Date Issued']).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
-
-                  {/* Additional Response Data */}
-                  {response.data && (
-                    <div className="bg-white/5 rounded-lg p-6">
-                      <h3 className="text-xl font-semibold text-white mb-4">Response Details</h3>
-                      <div className="bg-gray-800/50 rounded-lg p-4">
-                        <pre className="text-gray-300 text-sm whitespace-pre-wrap overflow-auto">
-                          {JSON.stringify(response.data, null, 2)}
-                        </pre>
+                  <h2 className="text-3xl font-bold text-white mb-4">❌ Display Failed</h2>
+                  <p className="text-lg text-red-400">{error}</p>
+                </div>
+              ) : (
+                <div className="text-center mb-8">
+                  <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle className="h-10 w-10 text-white" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-white mb-4">🎉 Display Created Successfully!</h2>
+                  <p className="text-lg text-green-400 mb-6">
+                    Your NFT has been created and is now available on the blockchain.
+                  </p>
+                  
+                  {/* Display URL */}
+                  <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-6 mb-6">
+                    <h3 className="text-xl font-semibold text-white mb-4">View Your NFT</h3>
+                    <div className="bg-gray-800/50 rounded-lg p-4">
+                      <a
+                        href={`https://testnet.suivision.xyz/object/${response}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 font-mono text-lg break-all flex items-center gap-2 justify-center"
+                      >
+                        <ExternalLink className="h-5 w-5 flex-shrink-0" />
+                        https://testnet.suivision.xyz/object/{response}
+                      </a>
+                    </div>
+                    <p className="text-gray-400 text-sm mt-3">
+                      Click the link above to view your NFT on the Sui blockchain explorer
+                    </p>
+                  </div>
+                  
+                  {/* NFT Summary */}
+                  {selectedCoin && selectedSupply && (
+                    <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-lg p-6">
+                      <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                        <Image className="h-6 w-6 text-purple-400" />
+                        NFT Details
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={selectedCoin['Coin Image']}
+                            alt={selectedCoin['Coin Name']}
+                            className="w-20 h-20 object-contain rounded-lg bg-white/10 p-2"
+                          />
+                          <div>
+                            <h4 className="text-white font-semibold">{selectedCoin['Coin Name']}</h4>
+                            <p className="text-gray-400 text-sm">Challenge Coin NFT</p>
+                          </div>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className="text-gray-400">Contract: </span>
+                            <span className="text-white font-mono">{selectedSupply.Contract_Name}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Display ID: </span>
+                            <span className="text-white font-mono">{response}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Date Issued: </span>
+                            <span className="text-white">
+                              {new Date(selectedCoin['Date Issued']).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -444,7 +446,7 @@ export const DisplayNFT: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
                 <button
                   onClick={resetForm}
-                  className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                 >
                   Display Another NFT
                 </button>
