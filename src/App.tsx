@@ -28,6 +28,7 @@ import { useAuthStore } from './store/authStore';
 import { useAdminStore } from './store/adminStore';
 import { MintNFT } from './pages/MintNFT';
 import { DisplayNFT } from './pages/DisplayNFT';
+import { DisplayRestrictedNFT } from './pages/DisplayRestrictedNFT';
 
 // Protected Route wrapper component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -157,6 +158,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DisplayNFT />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/display-restricted-nft"
+            element={
+              <ProtectedRoute>
+                <DisplayRestrictedNFT />
               </ProtectedRoute>
             }
           />

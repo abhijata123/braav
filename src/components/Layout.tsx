@@ -244,6 +244,7 @@ export function Layout() {
     { to: "/create-supply", icon: <Package className="h-4 w-4" />, label: "Create Supply" },
     { to: "/mint-nfts", icon: <Coins className="h-4 w-4" />, label: "Mint NFTs" },
     { to: "/display-nft", icon: <Image className="h-4 w-4" />, label: "Display NFT" },
+    { to: "/display-restricted-nft", icon: <Shield className="h-4 w-4" />, label: "Display Restricted NFT" },
     { to: "/create-wallet", icon: <Wallet className="h-4 w-4" />, label: "Create Wallet" },
     { to: "/submit-vetting-requests", icon: <Shield className="h-4 w-4" />, label: "Submit Vetting Request" },
   ];
@@ -431,28 +432,19 @@ export function Layout() {
                     <div className="flex items-center gap-2">
                       {item.icon}
                       {item.label}
-                {isVettingAdmin && (
-                  <Link
-                    to="/admin/vetting-dashboard"
-                    className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 flex items-center gap-2"
-                  >
-                    <UserCheck className="h-4 w-4" />
-                    Vetting Dashboard
-                  </Link>
-                )}
                     </div>
                   </Link>
                 ))}
 
                 {isVettingAdmin && (
                   <Link
-                    to="/admin/vetting"
+                    to="/admin/vetting-dashboard"
                     className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <div className="flex items-center gap-2">
                       <UserCheck className="h-4 w-4" />
-                      Vetting Admin
+                      Vetting Dashboard
                     </div>
                   </Link>
                 )}
