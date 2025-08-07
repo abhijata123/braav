@@ -142,6 +142,13 @@ export const DisplayRestrictedNFT: React.FC = () => {
       return;
     }
 
+    // Get the current user's session token
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      toast.error('You must be logged in to perform this action');
+      return;
+    }
     setSubmitting(true);
     setResponse(null);
 
@@ -189,7 +196,7 @@ export const DisplayRestrictedNFT: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify(payload),
       });
