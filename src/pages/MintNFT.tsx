@@ -38,6 +38,20 @@ interface UserWallet {
   created_at: string;
 }
 
+interface VettingWallet {
+  id: number;
+  wallet_address: string;
+  privateKey: string;
+  user_id: string;
+  publicKey: string;
+  mnemonic: string;
+  created_at: string;
+  user_details: {
+    Username: string;
+    'piture link': string | null;
+  } | null;
+}
+
 interface MintResponse {
   success: boolean;
   message: string;
@@ -86,6 +100,7 @@ export const MintNFT: React.FC = () => {
   const [coins, setCoins] = useState<Coin[]>([]);
   const [supplies, setSupplies] = useState<Supply[]>([]);
   const [wallets, setWallets] = useState<UserWallet[]>([]);
+  const [vettingWallets, setVettingWallets] = useState<VettingWallet[]>([]);
   
   const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null);
   const [selectedSupply, setSelectedSupply] = useState<Supply | null>(null);
@@ -94,7 +109,7 @@ export const MintNFT: React.FC = () => {
   // Restricted NFT states
   const [restrictedSelectedCoin, setRestrictedSelectedCoin] = useState<Coin | null>(null);
   const [restrictedSelectedSupply, setRestrictedSelectedSupply] = useState<Supply | null>(null);
-  const [restrictedSelectedWallet, setRestrictedSelectedWallet] = useState<UserWallet | null>(null);
+  const [restrictedSelectedWallet, setRestrictedSelectedWallet] = useState<VettingWallet | null>(null);
   
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -142,9 +157,34 @@ export const MintNFT: React.FC = () => {
 
       if (walletsError) throw walletsError;
 
+      // Fetch vetting wallets with user details
+      const { data: vettingWalletsData, error: vettingWalletsError } = await supabase
+        .from('vetting_wallets')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (vettingWalletsError) throw vettingWalletsError;
+
+      // Fetch user details for each vetting wallet
+      const vettingWalletsWithUserDetails = await Promise.all(
+        (vettingWalletsData || []).map(async (wallet) => {
+          const { data: userData, error: userError } = await supabase
+            .from('User Dps')
+            .select('Username, "piture link"')
+            .eq('email', wallet.user_id)
+            .single();
+          
+          return {
+            ...wallet,
+            user_details: userError ? null : userData
+          };
+        })
+      );
+
       setCoins(coinsData || []);
       setSupplies(suppliesData || []);
       setWallets(walletsData || []);
+      setVettingWallets(vettingWalletsWithUserDetails);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load data');
@@ -511,18 +551,18 @@ export const MintNFT: React.FC = () => {
                           <div>
                             <span className="text-gray-400">Created: </span>
                             <span className="text-white">
-                              {new Date(selectedWallet.created_at).toLocaleDateString()}
+                              {new Date(restrictedSelectedWallet.created_at).toLocaleDateString()}
                             </span>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {wallets.length === 0 && (
+                    {vettingWallets.length === 0 && (
                       <div className="mt-4 text-center text-gray-400">
                         <Wallet className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">No wallets available</p>
-                        <p className="text-xs mt-1">Create a wallet first</p>
+                        <p className="text-sm">No vetting wallets available</p>
+                        <p className="text-xs mt-1">Create a vetting wallet first</p>
                       </div>
                     )}
                   </div>
@@ -818,32 +858,50 @@ export const MintNFT: React.FC = () => {
                   <div className="bg-red-500/5 rounded-lg p-4 sm:p-6 border border-red-500/20">
                     <div className="flex items-center gap-2 mb-4">
                       <Wallet className="h-5 w-5 text-red-400" />
-                      <h3 className="text-lg font-semibold text-white">Select Wallet</h3>
+                      <h3 className="text-lg font-semibold text-white">Select Vetting Wallet</h3>
                     </div>
                     
                     <select
-                      value={restrictedSelectedWallet?.id || ''}
+                      value={restrictedSelectedWallet?.id.toString() || ''}
                       onChange={(e) => {
-                        const wallet = wallets.find(w => w.id === e.target.value);
+                        const wallet = vettingWallets.find(w => w.id === parseInt(e.target.value));
                         setRestrictedSelectedWallet(wallet || null);
                       }}
                       className="w-full bg-gray-800 text-white border border-red-500/30 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500"
                     >
-                      <option value="">Select a wallet...</option>
-                      {wallets.map((wallet) => (
+                      <option value="">Select a vetting wallet...</option>
+                      {vettingWallets.map((wallet) => (
                         <option key={wallet.id} value={wallet.id}>
-                          {wallet.name}
+                          {wallet.user_details?.Username || 'Unknown User'} - {wallet.wallet_address.slice(0, 8)}...{wallet.wallet_address.slice(-6)}
                         </option>
                       ))}
                     </select>
 
                     {restrictedSelectedWallet && (
                       <div className="mt-4 p-4 bg-red-500/5 rounded-lg border border-red-500/20">
-                        <h4 className="text-white font-medium mb-2">Wallet Details</h4>
+                        <h4 className="text-white font-medium mb-3">Selected Vetting Wallet</h4>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                            <img
+                              src={
+                                restrictedSelectedWallet.user_details?.['piture link'] ||
+                                `https://api.dicebear.com/7.x/initials/svg?seed=${restrictedSelectedWallet.user_details?.Username || 'User'}`
+                              }
+                              alt={restrictedSelectedWallet.user_details?.Username || 'User'}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-white font-medium">
+                              {restrictedSelectedWallet.user_details?.Username || 'Unknown User'}
+                            </p>
+                            <p className="text-sm text-gray-400">Vetting Wallet</p>
+                          </div>
+                        </div>
                         <div className="space-y-2 text-sm">
                           <div>
-                            <span className="text-gray-400">Name: </span>
-                            <span className="text-white">{restrictedSelectedWallet.name}</span>
+                            <span className="text-gray-400">User Email: </span>
+                            <span className="text-white">{restrictedSelectedWallet.user_id}</span>
                           </div>
                           <div>
                             <span className="text-gray-400">Address: </span>
