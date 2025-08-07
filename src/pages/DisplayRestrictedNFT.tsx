@@ -183,20 +183,23 @@ export const DisplayRestrictedNFT: React.FC = () => {
       };
 
       // Call the new webhook endpoint for restricted NFT display
-      const webhookResponse = await fetch('https://hook.us2.make.com/RESTRICTED_DISPLAY_WEBHOOK_URL', {
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-restricted-display-nft`;
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify(payload),
       });
 
-      if (!webhookResponse.ok) {
-        const errorText = await webhookResponse.text();
-        throw new Error(errorText || 'Failed to create restricted NFT display');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create restricted NFT display');
       }
 
-      const result: RestrictedDisplayResponse = await webhookResponse.json();
+      const result: RestrictedDisplayResponse = await response.json();
       setResponse(result);
 
       if (result.success) {
