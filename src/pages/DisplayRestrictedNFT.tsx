@@ -43,13 +43,6 @@ interface Supply {
   created_at: string;
 }
 
-interface RestrictedDisplayResponse {
-  success: boolean;
-  restrictedNftDisplayId?: string;
-  message?: string;
-  error?: string;
-}
-
 export const DisplayRestrictedNFT: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -65,7 +58,7 @@ export const DisplayRestrictedNFT: React.FC = () => {
   
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [response, setResponse] = useState<RestrictedDisplayResponse | null>(null);
+  const [response, setResponse] = useState<any | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -142,26 +135,10 @@ export const DisplayRestrictedNFT: React.FC = () => {
       return;
     }
 
-    // Get the current user's session token
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError || !session) {
-      toast.error('You must be logged in to perform this action');
-      return;
-    }
     setSubmitting(true);
     setResponse(null);
 
     try {
-      // Prepare display keys and values based on coin data
-      const displayKeys = ['name', 'image', 'description', 'link'];
-      const displayValues = [
-        selectedCoin['Coin Name'],
-        selectedCoin['Coin Image'],
-        selectedCoin['Notes'] || `A ${selectedCoin['Coin Name']} challenge coin from ${selectedCoin['Username']}'s collection`,
-        generatePublicLink(selectedCoin)
-      ];
-
       const payload = {
         coinData: {
           id: selectedCoin.id,
@@ -184,43 +161,30 @@ export const DisplayRestrictedNFT: React.FC = () => {
           supplyCapId: selectedSupply.SUPPLY_CAP_ID,
           lineageId: selectedSupply.LINEAGE_ID,
           counterId: selectedSupply.COUNTER_ID
-        },
-        displayKeys,
-        displayValues
+        }
       };
 
-      // Call the new webhook endpoint for restricted NFT display
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-restricted-display-nft`;
-      
-      const response = await fetch(apiUrl, {
+      const webhookResponse = await fetch('https://hook.us2.make.com/piiy32ye4rvv4lle8efyj4f23r6g39q6', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create restricted NFT display');
+      if (!webhookResponse.ok) {
+        const errorText = await webhookResponse.text();
+        throw new Error(errorText || 'Failed to create restricted NFT display');
       }
 
-      const result: RestrictedDisplayResponse = await response.json();
+      const result = await webhookResponse.json();
       setResponse(result);
 
-      if (result.success) {
-        toast.success('Restricted NFT display created successfully!');
-      } else {
-        throw new Error(result.error || result.message || 'Failed to create restricted NFT display');
-      }
+      toast.success('Request sent successfully!');
     } catch (error) {
       console.error('Error creating restricted NFT display:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create restricted NFT display';
-      setResponse({
-        success: false,
-        error: errorMessage
-      });
+      setResponse({ error: errorMessage });
       toast.error(errorMessage);
     } finally {
       setSubmitting(false);
@@ -525,104 +489,33 @@ export const DisplayRestrictedNFT: React.FC = () => {
             </div>
           ) : (
             <div className="max-w-4xl mx-auto px-4">
-              {response.error ? (
-                <div className="text-center mb-8">
-                  <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <AlertCircle className="h-10 w-10 text-white" />
-                  </div>
-                  <h2 className="text-3xl font-bold text-white mb-4">❌ Display Creation Failed</h2>
-                  <p className="text-lg text-red-400">{response.error}</p>
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle className="h-10 w-10 text-white" />
                 </div>
-              ) : (
-                <div className="text-center mb-8">
-                  <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle className="h-10 w-10 text-white" />
+                <h2 className="text-3xl font-bold text-white mb-4">Response Received</h2>
+                <p className="text-lg text-blue-400 mb-6">
+                  Here's the response from the webhook:
+                </p>
+                
+                {/* Raw Response Display */}
+                <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-lg p-6 mb-6">
+                  <h3 className="text-xl font-semibold text-white mb-4">Webhook Response</h3>
+                  <div className="bg-gray-800/50 rounded-lg p-4 text-left">
+                    <pre className="text-green-400 font-mono text-sm whitespace-pre-wrap overflow-auto">
+                      {JSON.stringify(response, null, 2)}
+                    </pre>
                   </div>
-                  <h2 className="text-3xl font-bold text-white mb-4">🎉 Restricted NFT Display Created!</h2>
-                  <p className="text-lg text-green-400 mb-6">
-                    Your restricted NFT display has been created successfully and is now available on the blockchain.
-                  </p>
-                  
-                  {/* Display URL */}
-                  <div className="bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/20 rounded-lg p-6 mb-6">
-                    <h3 className="text-xl font-semibold text-white mb-4">View Your Restricted NFT Display</h3>
-                    <div className="bg-gray-800/50 rounded-lg p-3 sm:p-4">
-                      <a
-                        href={`https://testnet.suivision.xyz/object/${response.restrictedNftDisplayId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-red-400 hover:text-red-300 font-mono text-xs sm:text-sm break-all flex flex-col items-center gap-2 justify-center text-center"
-                      >
-                        <ExternalLink className="h-5 w-5 flex-shrink-0" />
-                        <span className="break-all leading-relaxed">https://testnet.suivision.xyz/object/{response.restrictedNftDisplayId}</span>
-                      </a>
-                    </div>
-                    <p className="text-gray-400 text-sm mt-3">
-                      Click the link above to view your restricted NFT display on the Sui blockchain explorer
-                    </p>
-                  </div>
-                  
-                  {/* NFT Summary */}
-                  {selectedCoin && selectedWallet && selectedSupply && (
-                    <div className="bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/20 rounded-lg p-6">
-                      <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                        <Shield className="h-6 w-6 text-red-400" />
-                        Restricted NFT Details
-                      </h3>
-                      <div className="space-y-6">
-                        <div className="flex flex-col items-center gap-4">
-                          <img
-                            src={selectedCoin['Coin Image']}
-                            alt={selectedCoin['Coin Name']}
-                            className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg bg-white/10 p-2 flex-shrink-0"
-                          />
-                          <div className="text-center">
-                            <h4 className="text-white font-semibold">{selectedCoin['Coin Name']}</h4>
-                            <p className="text-gray-400 text-sm">Restricted Challenge Coin NFT</p>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 gap-4 text-sm">
-                          <div className="bg-white/5 rounded-lg p-3">
-                            <span className="text-gray-400">Contract: </span>
-                            <span className="text-white font-mono">{selectedSupply.Contract_Name}</span>
-                          </div>
-                          <div className="bg-white/5 rounded-lg p-3">
-                            <span className="text-gray-400">Display ID: </span>
-                            <div className="bg-gray-800/50 rounded-md p-2 mt-1">
-                              <span className="text-white font-mono text-xs break-all">{response.restrictedNftDisplayId}</span>
-                            </div>
-                          </div>
-                          <div className="bg-white/5 rounded-lg p-3">
-                            <span className="text-gray-400">Verified Wallet: </span>
-                            <div className="flex items-center gap-2 mt-1">
-                              <img
-                                src={selectedWallet.user['piture link'] || `https://api.dicebear.com/7.x/initials/svg?seed=${selectedWallet.user.Username}`}
-                                alt={selectedWallet.user.Username}
-                                className="w-6 h-6 rounded-full object-cover"
-                              />
-                              <span className="text-white">{selectedWallet.user.Username}</span>
-                            </div>
-                          </div>
-                          <div className="bg-white/5 rounded-lg p-3">
-                            <span className="text-gray-400">Date Issued: </span>
-                            <span className="text-white">
-                              {new Date(selectedCoin['Date Issued']).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
-              )}
+              </div>
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
                 <button
                   onClick={resetForm}
-                  className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Create Another Display
+                  Send Another Request
                 </button>
                 <button
                   onClick={() => navigate('/')}
