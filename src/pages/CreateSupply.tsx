@@ -76,7 +76,7 @@ export const CreateSupply: React.FC = () => {
 
     try {
       // Capture the current token number for this request
-      const tokenNumberForThisRequest = currentTokenNumber;
+      // const tokenNumberForThisRequest = currentTokenNumber;
       const tokenTypeName = `BRAAV${currentTokenNumber}`;
       
       // Immediately increment and save the counter for the next request
@@ -109,7 +109,7 @@ export const CreateSupply: React.FC = () => {
         
         // Extract data from the response and store in Supabase
         try {
-          await storeSupplyData(result, tokenTypeName);
+          await storeSupplyData(result.result, tokenTypeName);
         } catch (error) {
           console.error('Error storing supply data:', error);
           toast.error('Supply created but failed to store data');
@@ -236,7 +236,7 @@ export const CreateSupply: React.FC = () => {
                 </div>
                 
                 <div className="space-y-4">
-                  <div>
+                  {/* <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Token Type Name
                     </label>
@@ -252,7 +252,7 @@ export const CreateSupply: React.FC = () => {
                         This unique identifier will be automatically assigned to your token supply
                       </p>
                     </div>
-                  </div>
+                  </div> */}
 
                   <div>
                     <label htmlFor="supplyLimit" className="block text-sm font-medium text-gray-300 mb-2">

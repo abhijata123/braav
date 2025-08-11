@@ -246,7 +246,7 @@ export function Layout() {
     { to: "/display-nft", icon: <Image className="h-4 w-4" />, label: "Display NFT" },
     { to: "/display-restricted-nft", icon: <Shield className="h-4 w-4" />, label: "Display Restricted NFT" },
     { to: "/create-wallet", icon: <Wallet className="h-4 w-4" />, label: "Create Wallet" },
-    { to: "/submit-vetting-requests", icon: <Shield className="h-4 w-4" />, label: "Submit Vetting Request" },
+    { to: "/submit-vetting-requests", icon: <Shield className="h-4 w-4" />, label: "Become a Creator" },
   ];
 
   return (

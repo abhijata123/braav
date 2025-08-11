@@ -107,11 +107,19 @@ export const SubmitVettingRequests: React.FC = () => {
       case 'no_wallet':
         return (
           <div className="text-center">
-            <div className="relative mb-8">
+            <div
+              // to="/create-wallet"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 mx-auto shadow-lg"
+            >
+              <Wallet className="h-5 w-5" />
+              Submit Request
+              {/* <ExternalLink className="h-4 w-4" /> */}
+            </div>
+            {/* <div className="relative mb-8">
               <div className="w-24 h-24 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AlertCircle className="h-12 w-12 text-white" />
               </div>
-            </div>
+            </div> 
             
             <h2 className="text-3xl font-bold text-white mb-4">Wallet Required</h2>
             <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
@@ -151,7 +159,7 @@ export const SubmitVettingRequests: React.FC = () => {
             
             <p className="text-sm text-gray-400 mt-4">
               You'll be redirected to the wallet creation page
-            </p>
+            </p> */}
           </div>
         );
 
